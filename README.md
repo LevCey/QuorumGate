@@ -1,6 +1,6 @@
 # QuorumGate
 
-**Confidential Multi-Reviewer Risk Desk.** A local-first pre-payment review desk that reads invoices and supplier messages on the finance team's own devices, flags payment fraud before money moves, and — for high-risk cases — enforces a four-eyes review peer-to-peer between two devices. No cloud. No external API. Sensitive payment data never leaves the device perimeter.
+**Confidential Multi-Reviewer Risk Desk.** A local-first pre-payment review desk that reads invoices and supplier messages on the finance team's own devices, flags payment fraud before money moves, and — for high-risk cases — enforces a four-eyes review peer-to-peer between two devices. No cloud. No external AI API. Sensitive payment data stays inside the company-controlled device perimeter.
 
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
 ![Status](https://img.shields.io/badge/status-in%20development-orange.svg)
@@ -34,12 +34,12 @@ A payment request — invoice + supplier email + optional purchase order — is 
 1. **Reads** the documents locally (OCR + parsing).
 2. **Grounds** them against the company's own supplier and payment history (local RAG).
 3. **Checks** them against a deterministic risk-rule set.
-4. **Reasons** over the assembled evidence with a local QVAC Psy model and produces a structured verdict — **Approve / Hold / Escalate** — with an explainable memo that cites the grounding evidence.
+4. **Reasons** over the assembled evidence with a local reasoning model (an instruct model run through the QVAC SDK) and produces a structured verdict — **Approve / Hold / Escalate** — with an explainable memo that cites the grounding evidence.
 5. **Returns** the decision to a human, who makes the final call and exports an audit-evidence bundle.
 
 ### Four-eyes across two devices — the differentiator
 
-For high-value or high-risk cases, QuorumGate delegates the case to a **second reviewer's device** over QVAC's peer-to-peer delegated inference. A second, independent local model produces its own opinion — the **four-eyes principle** (segregation of duties) enforced across devices, with the raw documents never leaving either machine. If no peer is available, the review falls back to local inference, so a verdict is always reached.
+For high-value or high-risk cases, QuorumGate delegates the case to a **second reviewer's device** over QVAC's peer-to-peer delegated inference. A second, independent local model produces its own opinion — the **four-eyes principle** (segregation of duties) enforced across two company-controlled devices. Reviewer A sends only an end-to-end-encrypted bundle of the minimum necessary review material — normalized invoice fields, the fired risk checks, and supporting evidence snippets; no cloud service or third-party AI ever receives invoice content, IBANs, or supplier history. If no peer is available, the review falls back to local inference, so a verdict is always reached.
 
 This "second reviewer on a second device, fully offline" step maps a real compliance control — dual authorization — directly onto QVAC's most distinctive primitive, and is what separates QuorumGate from any single-machine document tool.
 
@@ -63,7 +63,7 @@ This "second reviewer on a second device, fully offline" step maps a real compli
   |    Local RAG over supplier / payment history    |
   |             |                                   |
   |             v                                   |
-  |    QVAC Psy  -->  Verdict + explainable memo     |
+  |    Reasoning LLM  -->  Verdict + explainable memo|
   |             |                                   |
   |   low risk  v          high value / high risk    |
   |   Approve / Hold ---------------+               |
@@ -83,11 +83,11 @@ This "second reviewer on a second device, fully offline" step maps a real compli
                 Audit-evidence bundle (local export)
 ```
 
-**Key property:** raw documents, IBANs, and payment history stay on the reviewer devices. Only the verdict and the exported evidence bundle ever leave a review session.
+**Key property:** invoice content, IBANs, and payment history stay within the company-controlled device perimeter and never reach any cloud or third-party AI service. During a four-eyes review, only a minimal, end-to-end-encrypted case bundle moves directly between the two reviewer devices; outside that perimeter, only the verdict and the exported evidence bundle ever leave a review session.
 
 ## Risk checks
 
-Each payment request is evaluated against a deterministic rule set, grounded by local RAG and explained by the QVAC Psy model:
+Each payment request is evaluated against a deterministic rule set, grounded by local RAG and explained by the local reasoning model:
 
 - **Bank account / IBAN change** — does the destination IBAN differ from this supplier's verified history?
 - **Duplicate invoice** — same invoice number, or same supplier + amount + near date.
@@ -124,12 +124,12 @@ All inference, embeddings, RAG, OCR, and delegated compute run through [`@qvac/s
 
 | Primitive | Role in QuorumGate |
 |---|---|
-| **LLM completion (QVAC Psy)** | Reasons over the assembled evidence and writes the explainable verdict memo. |
+| **LLM completion** | An instruct model (loaded as GGUF via the SDK) reasons over the assembled evidence and writes the explainable verdict memo, with tool calling for orchestration. |
 | **Embeddings + RAG** | Grounds the risk checks in the company's own supplier and payment history. |
 | **OCR** | Extracts fields from scanned or photographed invoices. |
 | **P2P delegated inference** (Holepunch stack) | The four-eyes second review across two devices, with automatic fallback to local inference. |
 
-QuorumGate routes all reasoning through **QVAC Psy**, Tether's foundational reasoning model — not the medical *MedPsy* variant. The exact model build and quantization are pinned during the build period and recorded in the reproducibility notes.
+QuorumGate runs its reasoning locally through the QVAC SDK using an open instruct model (loaded as a GGUF; the exact model and quantization are pinned during the build and recorded in the reproducibility notes). The whole pipeline — OCR, embeddings/RAG, reasoning with tool calling, and P2P delegated inference — runs through `@qvac/sdk`, so the entire review is QVAC-SDK-native with no cloud dependency.
 
 The deterministic risk checks are implemented in plain, auditable code; the model reasons over their output rather than being trusted to enforce the rules itself.
 
@@ -140,7 +140,7 @@ The deterministic risk checks are implemented in plain, auditable code; the mode
 | **Track** | General Purpose Devices — dedicated hardware up to 32 GB RAM |
 | **Runtime** | Node.js LTS, cross-platform (Linux, macOS, Windows) |
 | **Inference** | `@qvac/sdk` — 100% local, no cloud, no external AI API |
-| **Reasoning model** | QVAC Psy (foundational), run locally |
+| **Reasoning model** | Open instruct model in GGUF, run locally via the QVAC SDK |
 | **Models** | Downloaded and cached locally; the desk runs fully offline after the first download |
 | **License** | Apache 2.0 |
 
@@ -154,7 +154,7 @@ quorumgate/
 ├── LICENSE                     Apache 2.0
 ├── packages/
 │   ├── core/                   Deterministic risk-rules engine
-│   ├── qvac-pipeline/          OCR -> RAG -> QVAC Psy verdict, on @qvac/sdk
+│   ├── qvac-pipeline/          OCR -> RAG -> reasoning-model verdict, on @qvac/sdk
 │   ├── p2p-review/             Four-eyes delegated inference + local fallback
 │   └── ui/                     Reviewer desk UI
 ├── examples/
@@ -178,7 +178,7 @@ quorumgate/
   npm install @qvac/sdk
   ```
 
-- A local QVAC Psy model build (downloaded and cached on first run)
+- A local instruct-model GGUF (downloaded and cached on first run; pinned during the build)
 
 ### Running the desk
 
@@ -188,7 +188,7 @@ Setup and run instructions are finalized during the build period as components l
 
 QuorumGate is being built during the QVAC Hackathon I build window (June 1–21, 2026).
 
-- **Core pipeline** — OCR to structured fields, deterministic risk rules, QVAC Psy verdict + explainable memo, local supplier-history RAG; a working single-device review.
+- **Core pipeline** — OCR to structured fields, deterministic risk rules, reasoning-model verdict + explainable memo, local supplier-history RAG; a working single-device review.
 - **Four-eyes P2P** — delegated inference to a second reviewer device over the Holepunch stack, with automatic fallback to local inference.
 - **Reviewer desk** — a clean UI with a visible Approve / Hold / Escalate decision and audit-evidence export.
 - **Evidence** — reproducibility instructions, hardware specs, audit logs, and a demo video.
