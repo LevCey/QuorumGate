@@ -1,0 +1,9 @@
+{
+  "name": "@quorumgate/p2p-review",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Four-eyes delegation (Layer C): minimal encrypted case bundle to a second reviewer device over QVAC P2P, with local fallback.",
+  "license": "Apache-2.0",
+  "main": "src/index.js"
+}

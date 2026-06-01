@@ -1,0 +1,17 @@
+{
+  "name": "quorumgate",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "QuorumGate — Confidential Multi-Reviewer Risk Desk. Local-first pre-payment review on the QVAC SDK.",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

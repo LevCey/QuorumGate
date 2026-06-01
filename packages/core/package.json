@@ -1,0 +1,10 @@
+{
+  "name": "@quorumgate/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic risk-check and verdict-floor engine (Layer A — no QVAC SDK dependency).",
+  "license": "Apache-2.0",
+  "main": "src/index.js",
+  "exports": "./src/index.js"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@quorumgate/qvac-pipeline",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OCR → local RAG → reasoning-model verdict and memo, on the QVAC SDK (Layer B).",
+  "license": "Apache-2.0",
+  "main": "src/index.js"
+}

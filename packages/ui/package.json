@@ -1,0 +1,9 @@
+{
+  "name": "@quorumgate/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Reviewer desk UI — drop a payment request, see the verdict, fired checks, memo, and make the final decision.",
+  "license": "Apache-2.0",
+  "main": "src/index.js"
+}
