@@ -20,6 +20,14 @@ test('a high-severity failure forbids APPROVE and allows escalation', () => {
   assert.equal(floor.escalateEligible, true);
 });
 
+test('low-severity (advisory) failures alone keep APPROVE permitted', () => {
+  const floor = computeVerdictFloor([
+    { checkId: 'urgency_language', status: 'FAIL', severity: 'low', evidence: {} },
+  ]);
+  assert.equal(floor.floor, 'APPROVE');
+  assert.equal(floor.approveForbidden, false);
+});
+
 test('the model cannot loosen the floor — APPROVE under a high failure is clamped to HOLD', () => {
   const floor = computeVerdictFloor([
     { checkId: 'iban_change', status: 'FAIL', severity: 'high', evidence: {} },

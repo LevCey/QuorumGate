@@ -20,8 +20,9 @@ const VERDICT_RANK = { APPROVE: 0, HOLD: 1, ESCALATE: 2 };
  * Compute the deterministic verdict floor from the fired checks.
  *
  * This is the auditable heart of the desk: the floor is decided here, in code, from
- * the check results alone. A high-severity failure forbids approval; any failure
- * blocks a clean approve. The reasoning model may tighten this floor, never loosen it.
+ * the check results alone. A high- or medium-severity failure forbids approval;
+ * low-severity failures are advisory and do not block on their own. The reasoning
+ * model may tighten this floor, never loosen it.
  *
  * @param {CheckResult[]} results
  * @returns {VerdictFloor}
@@ -29,13 +30,16 @@ const VERDICT_RANK = { APPROVE: 0, HOLD: 1, ESCALATE: 2 };
 export function computeVerdictFloor(results) {
   const fails = results.filter((r) => r.status === 'FAIL');
   const highFails = fails.filter((r) => r.severity === 'high');
+  const mediumFails = fails.filter((r) => r.severity === 'medium');
 
   if (highFails.length > 0) {
     return { floor: 'HOLD', approveForbidden: true, escalateEligible: true };
   }
-  if (fails.length > 0) {
-    return { floor: 'HOLD', approveForbidden: true, escalateEligible: fails.length >= 2 };
+  if (mediumFails.length > 0) {
+    return { floor: 'HOLD', approveForbidden: true, escalateEligible: mediumFails.length >= 2 };
   }
+  // Only low-severity (advisory) signals, or none: approval remains permitted. The
+  // model may still choose to HOLD on the strength of advisory signals.
   return { floor: 'APPROVE', approveForbidden: false, escalateEligible: false };
 }
 

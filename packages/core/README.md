@@ -7,8 +7,8 @@ check runs in plain code and emits a structured result; the verdict floor is com
 here, from those results alone. The reasoning model may make a verdict *more*
 conservative, never less — it cannot turn a failed check into an approval.
 
-Run the tests (no install required):
+Run the tests (no install required), from the repository root:
 
 ```bash
-node --test packages/core
+npm test
 ```
