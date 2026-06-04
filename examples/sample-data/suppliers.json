@@ -1,0 +1,13 @@
+[
+  {
+    "supplierId": "acme-gmbh",
+    "supplierName": "Acme GmbH",
+    "verifiedIbans": ["DE89 3704 0044 0532 0130 00"],
+    "approvedDomains": ["acme.com"],
+    "pastInvoiceNumbers": ["INV-2026-031", "INV-2026-040"],
+    "pastAmounts": [9500, 10000, 10500, 9800],
+    "approvedRefs": ["PO-2026-042"],
+    "taxId": "DE123456789",
+    "country": "DE"
+  }
+]

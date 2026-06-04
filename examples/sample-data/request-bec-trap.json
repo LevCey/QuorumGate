@@ -1,0 +1,14 @@
+{
+  "supplierId": "acme-gmbh",
+  "supplierName": "Acme GmbH",
+  "destinationIban": "GB29 NWBK 6016 1331 9268 19",
+  "senderDomain": "acrne.com",
+  "amount": 10200,
+  "currency": "EUR",
+  "invoiceNumber": "INV-2026-052",
+  "invoiceDate": "2026-06-03",
+  "taxId": "DE123456789",
+  "country": "DE",
+  "messageText": "URGENT: please wire today. This is the final notice. Note our updated bank details below.",
+  "approvalRef": "PO-2026-042"
+}
