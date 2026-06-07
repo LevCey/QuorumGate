@@ -1,6 +1,4 @@
 // @ts-check
-import { loadModel, completion } from '@qvac/sdk';
-
 /** @typedef {import('./model.js').ReasoningModel} ReasoningModel */
 /** @typedef {import('./model.js').CompletionRequest} CompletionRequest */
 /** @typedef {import('./model.js').CompletionResult} CompletionResult */
@@ -11,18 +9,21 @@ import { loadModel, completion } from '@qvac/sdk';
  * it onto `@qvac/sdk` (loadModel returns a modelId; completion streams via
  * `result.tokenStream`).
  *
- * Tool calling is intentionally not wired here: the pipeline runs the
- * code-orchestrated path (D11), and tool calling requires a tools-configured model
- * load (`modelConfig: { tools: true, toolsMode: 'dynamic' }`) plus a capable model —
- * a later enhancement, not a dependency.
+ * `@qvac/sdk` is imported lazily, inside this function, so importing the pipeline
+ * does not load the SDK (~780 packages) unless a real model is actually used.
  *
- * Validate on the demo hardware with a real model (see `scripts/spike-qvac.mjs`),
- * which exercises the same loadModel → completion → tokenStream path.
+ * Tool calling is intentionally not wired here: the pipeline runs the
+ * code-orchestrated path (D11); tool calling requires a tools-configured model load
+ * (`modelConfig: { tools: true, toolsMode: 'dynamic' }`) plus a capable model — a
+ * later enhancement, not a dependency.
+ *
+ * Validate on the demo hardware with a real model (see `scripts/spike-qvac.mjs`).
  *
  * @param {{ modelSrc: string, modelType?: string, modelConfig?: Record<string, unknown> }} options
  * @returns {Promise<ReasoningModel & { modelId: string }>}
  */
 export async function createQvacModel({ modelSrc, modelType = 'llm', modelConfig }) {
+  const { loadModel, completion } = await import('@qvac/sdk');
   const modelId = await loadModel({ modelType, modelSrc, ...(modelConfig ? { modelConfig } : {}) });
 
   return {
