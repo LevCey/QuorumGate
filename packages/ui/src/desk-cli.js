@@ -1,13 +1,14 @@
 // @ts-check
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { runDeskReview, SupplierStore, remoteCallDisclosure } from '@quorumgate/qvac-pipeline';
+import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, AuditLog } from '@quorumgate/qvac-pipeline';
 import { createStubModel } from './stub-model.js';
 
 /**
  * Run the reviewer desk on one payment request and write the evidence artifacts to
  * disk. Uses the offline deterministic stub model unless `modelSrc` is given, in
- * which case the real QVAC SDK model is used (loaded lazily). A human decision, if
- * supplied, is recorded in the bundle (the system recommends; the human decides).
+ * which case the real QVAC SDK model is used (loaded lazily) and an audit log of the
+ * inference performance is written. A human decision, if supplied, is recorded in the
+ * bundle (the system recommends; the human decides).
  *
  * @param {{ requestPath: string, suppliersPath: string, outDir: string, modelSrc?: string, now?: string, decision?: string, reviewer?: string }} opts
  */
@@ -16,9 +17,10 @@ export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, no
   const request = JSON.parse(readFileSync(requestPath, 'utf8'));
 
   let model;
+  let auditLog = null;
   if (modelSrc) {
-    const { createQvacModel } = await import('@quorumgate/qvac-pipeline');
-    model = await createQvacModel({ modelSrc });
+    auditLog = new AuditLog();
+    model = await createQvacModel({ modelSrc, auditLog });
   } else {
     model = createStubModel();
   }
@@ -29,12 +31,19 @@ export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, no
   });
 
   mkdirSync(outDir, { recursive: true });
-  const bundlePath = `${outDir}/evidence-bundle.json`;
-  const disclosurePath = `${outDir}/remote-call-disclosure.json`;
-  writeFileSync(bundlePath, `${JSON.stringify(result.bundle, null, 2)}\n`);
-  writeFileSync(disclosurePath, `${JSON.stringify(remoteCallDisclosure(), null, 2)}\n`);
+  /** @type {{ bundlePath: string, disclosurePath: string, auditPath?: string }} */
+  const outputs = {
+    bundlePath: `${outDir}/evidence-bundle.json`,
+    disclosurePath: `${outDir}/remote-call-disclosure.json`,
+  };
+  writeFileSync(outputs.bundlePath, `${JSON.stringify(result.bundle, null, 2)}\n`);
+  writeFileSync(outputs.disclosurePath, `${JSON.stringify(remoteCallDisclosure(), null, 2)}\n`);
+  if (auditLog) {
+    outputs.auditPath = `${outDir}/audit-log.jsonl`;
+    writeFileSync(outputs.auditPath, auditLog.toJSONL());
+  }
 
-  return { ...result, outputs: { bundlePath, disclosurePath }, usedModel: modelSrc ? 'qvac' : 'stub' };
+  return { ...result, outputs, usedModel: modelSrc ? 'qvac' : 'stub' };
 }
 
 /**
@@ -93,5 +102,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     reviewer: flag('--reviewer'),
   });
   console.log(formatReport(result));
-  console.log(`\nEvidence written: ${result.outputs.bundlePath}, ${result.outputs.disclosurePath}`);
+  const written = [result.outputs.bundlePath, result.outputs.disclosurePath, result.outputs.auditPath].filter(Boolean);
+  console.log(`\nEvidence written: ${written.join(', ')}`);
 }
