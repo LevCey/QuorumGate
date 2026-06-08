@@ -35,7 +35,7 @@ test('the desk reviews the BEC trap, holds it, and writes evidence (offline stub
     const disclosure = JSON.parse(readFileSync(result.outputs.disclosurePath, 'utf8'));
     assert.equal(disclosure.calls.length, 0);
 
-    assert.match(formatReport(result), /VERDICT: HOLD/);
+    assert.match(formatReport(result), /Recommendation \(system\): HOLD/);
   });
 });
 
@@ -47,5 +47,22 @@ test('the desk approves the clean request (offline stub)', async () => {
       outDir: out,
     });
     assert.equal(result.review.verdict, 'APPROVE');
+  });
+});
+
+test('a human Escalate→Block decision is recorded and shown in the report', async () => {
+  await withTempDir(async (out) => {
+    const result = await runDesk({
+      requestPath: `${dataDir}/request-bec-trap.json`,
+      suppliersPath: `${dataDir}/suppliers.json`,
+      outDir: out,
+      decision: 'BLOCK',
+      reviewer: 'Levent',
+      now: '2026-06-08T00:00:00Z',
+    });
+    const bundle = JSON.parse(readFileSync(result.outputs.bundlePath, 'utf8'));
+    assert.equal(bundle.humanDecision.decision, 'BLOCK');
+    assert.equal(bundle.humanDecision.reviewer, 'Levent');
+    assert.match(formatReport(result), /Final decision \(human\): BLOCK — Levent/);
   });
 });

@@ -6,11 +6,12 @@ import { createStubModel } from './stub-model.js';
 /**
  * Run the reviewer desk on one payment request and write the evidence artifacts to
  * disk. Uses the offline deterministic stub model unless `modelSrc` is given, in
- * which case the real QVAC SDK model is used (loaded lazily).
+ * which case the real QVAC SDK model is used (loaded lazily). A human decision, if
+ * supplied, is recorded in the bundle (the system recommends; the human decides).
  *
- * @param {{ requestPath: string, suppliersPath: string, outDir: string, modelSrc?: string, now?: string }} opts
+ * @param {{ requestPath: string, suppliersPath: string, outDir: string, modelSrc?: string, now?: string, decision?: string, reviewer?: string }} opts
  */
-export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, now }) {
+export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, now, decision, reviewer }) {
   const store = new SupplierStore(JSON.parse(readFileSync(suppliersPath, 'utf8')));
   const request = JSON.parse(readFileSync(requestPath, 'utf8'));
 
@@ -22,7 +23,10 @@ export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, no
     model = createStubModel();
   }
 
-  const result = await runDeskReview(request, store, model, { now });
+  const result = await runDeskReview(request, store, model, {
+    now,
+    ...(decision ? { humanDecision: { decision, reviewer: reviewer ?? '' } } : {}),
+  });
 
   mkdirSync(outDir, { recursive: true });
   const bundlePath = `${outDir}/evidence-bundle.json`;
@@ -39,7 +43,7 @@ export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, no
  * @returns {string}
  */
 export function formatReport(result) {
-  const { review, knownSupplier, usedModel } = result;
+  const { review, bundle, knownSupplier, usedModel } = result;
   const lines = [
     'QuorumGate — local pre-payment review  [offline · no data left the device perimeter]',
     `Inference: ${usedModel === 'qvac' ? 'QVAC SDK (local)' : 'offline stub (deterministic)'}`,
@@ -48,7 +52,7 @@ export function formatReport(result) {
   lines.push('');
   const clampNote =
     review.modelProposed !== review.verdict ? `  (model proposed ${review.modelProposed}, clamped to the code floor)` : '';
-  lines.push(`VERDICT: ${review.verdict}${clampNote}`);
+  lines.push(`Recommendation (system): ${review.verdict}${clampNote}`);
 
   const fired = review.checks.filter((c) => c.status === 'FAIL');
   if (fired.length) {
@@ -60,6 +64,9 @@ export function formatReport(result) {
     lines.push('Risk: no checks fired');
   }
   lines.push('', 'Memo:', `  ${review.memo}`);
+
+  const h = bundle.humanDecision;
+  lines.push('', h ? `Final decision (human): ${h.decision} — ${h.reviewer} (${h.at})` : 'Final decision (human): pending');
   return lines.join('\n');
 }
 
@@ -72,7 +79,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     return i >= 0 ? args[i + 1] : undefined;
   };
   if (!requestPath) {
-    console.error('Usage: node packages/ui/src/desk-cli.js <request.json> [--suppliers <path>] [--model <gguf>] [--out <dir>]');
+    console.error(
+      'Usage: node packages/ui/src/desk-cli.js <request.json> [--suppliers <path>] [--model <gguf>] [--out <dir>] [--decide <APPROVE|HOLD|ESCALATE|BLOCK> --reviewer <name>]',
+    );
     process.exit(2);
   }
   const result = await runDesk({
@@ -80,6 +89,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     suppliersPath: flag('--suppliers') ?? 'examples/sample-data/suppliers.json',
     outDir: flag('--out') ?? 'evidence',
     modelSrc: flag('--model'),
+    decision: flag('--decide'),
+    reviewer: flag('--reviewer'),
   });
   console.log(formatReport(result));
   console.log(`\nEvidence written: ${result.outputs.bundlePath}, ${result.outputs.disclosurePath}`);

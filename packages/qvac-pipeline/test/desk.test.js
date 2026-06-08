@@ -36,3 +36,25 @@ test('a request missing a required field is rejected before review', async () =>
     /missing required field/i,
   );
 });
+
+test('a human decision is recorded in the evidence bundle (the human decides, R1.3)', async () => {
+  const { bundle } = await runDeskReview(readJson('request-bec-trap.json'), store, approves, {
+    now: '2026-06-08T00:00:00Z',
+    humanDecision: { decision: 'block', reviewer: 'Levent' },
+  });
+  assert.deepEqual(bundle.humanDecision, { decision: 'BLOCK', reviewer: 'Levent', at: '2026-06-08T00:00:00Z' });
+});
+
+test('an invalid human decision is rejected', async () => {
+  await assert.rejects(
+    () => runDeskReview(readJson('request-clean.json'), store, approves, { humanDecision: { decision: 'MAYBE', reviewer: 'Levent' } }),
+    /invalid human decision/i,
+  );
+});
+
+test('a human decision without a reviewer is rejected', async () => {
+  await assert.rejects(
+    () => runDeskReview(readJson('request-clean.json'), store, approves, { humanDecision: { decision: 'BLOCK', reviewer: '' } }),
+    /requires a reviewer/i,
+  );
+});
