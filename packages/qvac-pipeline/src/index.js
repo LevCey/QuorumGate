@@ -7,3 +7,4 @@ export { createQvacModel } from './qvac-model.js';
 export { buildEvidenceBundle, remoteCallDisclosure } from './evidence.js';
 export { runDeskReview } from './desk.js';
 export { AuditLog } from './audit-log.js';
+export { suggestAction } from '@quorumgate/core';

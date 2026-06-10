@@ -1,6 +1,6 @@
 // @ts-check
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, AuditLog } from '@quorumgate/qvac-pipeline';
+import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, AuditLog, suggestAction } from '@quorumgate/qvac-pipeline';
 import { createStubModel } from './stub-model.js';
 
 /**
@@ -73,6 +73,9 @@ export function formatReport(result) {
     lines.push('Risk: no checks fired');
   }
   lines.push('', 'Memo:', `  ${review.memo}`);
+
+  const action = suggestAction(review.checks);
+  if (action) lines.push('', 'Suggested action:', `  ${action}`);
 
   const h = bundle.humanDecision;
   lines.push('', h ? `Final decision (human): ${h.decision} — ${h.reviewer} (${h.at})` : 'Final decision (human): pending');

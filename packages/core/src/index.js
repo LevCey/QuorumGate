@@ -2,6 +2,7 @@
 export { runChecks } from './run-checks.js';
 export { computeVerdictFloor, clampVerdict } from './verdict.js';
 export { DEFAULT_CONFIG } from './config.js';
+export { suggestAction } from './suggested-action.js';
 export { checkIbanChange } from './checks/iban-change.js';
 export { checkDuplicateInvoice } from './checks/duplicate-invoice.js';
 export { checkSenderDomain } from './checks/sender-domain.js';
