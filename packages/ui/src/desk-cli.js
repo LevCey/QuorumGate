@@ -107,4 +107,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   console.log(formatReport(result));
   const written = [result.outputs.bundlePath, result.outputs.disclosurePath, result.outputs.auditPath].filter(Boolean);
   console.log(`\nEvidence written: ${written.join(', ')}`);
+  // The SDK's inference worker keeps the event loop alive after the review; all
+  // outputs are written synchronously above, so exit explicitly.
+  process.exit(0);
 }
