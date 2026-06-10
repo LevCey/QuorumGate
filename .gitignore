@@ -21,10 +21,3 @@ models/
 # OS / editor
 .DS_Store
 Thumbs.db
-
-# Private, in-house artifacts — these live OUTSIDE this repo; never commit a stray copy
-/PROJECT_CONTEXT.md
-/Strategy.md
-/specs/
-/search/
-/.claude/
