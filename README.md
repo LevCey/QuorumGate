@@ -31,8 +31,8 @@ QuorumGate is a local-first pre-payment review desk that runs entirely on the fi
 
 A payment request — invoice + supplier email + optional purchase order — is dropped into the desk, which:
 
-1. **Reads** the documents locally (OCR + parsing).
-2. **Grounds** them against the company's own supplier and payment history (local RAG).
+1. **Reads** the payment request locally — structured intake today, with OCR over scanned invoices (via the SDK) as the input path being wired up.
+2. **Grounds** it against the company's own supplier and payment history — a deterministic on-device supplier-history lookup today, with embedding-based retrieval (via the SDK) being wired in as additive grounding.
 3. **Checks** them against a deterministic risk-rule set.
 4. **Reasons** over the assembled evidence with a local reasoning model (an instruct model run through the QVAC SDK) and produces a structured verdict — **Approve / Hold / Escalate** — with an explainable memo that cites the grounding evidence.
 5. **Returns** the decision to a human, who makes the final call and exports an audit-evidence bundle.
@@ -100,23 +100,34 @@ Each payment request is evaluated against a deterministic rule set, grounded by 
 
 ## Example output
 
+Captured from the desk reviewing the synthetic BEC-trap sample with the offline deterministic stub — the same run anyone can reproduce on one machine, no model download needed:
+
+```bash
+node packages/ui/src/desk-cli.js examples/sample-data/request-bec-trap.json --decide BLOCK --reviewer "Reviewer A"
 ```
-Verdict: HOLD
 
-Reasons:
-- Supplier bank IBAN differs from the verified record on file (last 11 payments).
-- Sender domain does not match the approved supplier domain.
-- Invoice amount is 2.8x this supplier's historical average.
-- No matching purchase order found.
+```
+QuorumGate — local pre-payment review  [offline · no data left the device perimeter]
+Inference: offline stub (deterministic)
 
-Second reviewer (Device B): CONCUR — HOLD.
-All analysis performed locally on both devices. No data left the perimeter.
+Recommendation (system): HOLD
+Risk: 3 check(s) fired
+  - [high] iban_change: Destination IBAN is not among the supplier's verified accounts.
+  - [high] sender_domain: Sender domain is a look-alike of an approved supplier domain.
+  - [low] urgency_language: Pressure / urgency language detected.
+
+Memo:
+  Offline stub: verdict HOLD follows the code-decided floor. Findings: [high] iban_change: ...
 
 Suggested action:
-Verify bank details with a known contact before payment.
+  Verify the bank details with a known supplier contact before any payment.
+
+Final decision (human): BLOCK — Reviewer A (2026-06-10T19:26:24.168Z)
+
+Evidence written: evidence/evidence-bundle.json, evidence/remote-call-disclosure.json
 ```
 
-Every review returns a verdict (Approve / Hold / Escalate), a risk level with the specific signals that fired, an explainable memo citing the grounding evidence, a suggested next action, and an audit-evidence bundle.
+With `--model <instruct-gguf>`, the same review runs against a real local model through the QVAC SDK and the memo is written by the model; an inference audit log (TTFT, tokens/sec) is exported alongside the evidence. Every review returns a verdict (Approve / Hold / Escalate), the specific signals that fired, an explainable memo, a suggested next action, the human reviewer's recorded final decision, and an audit-evidence bundle.
 
 ## Built with the QVAC SDK
 
@@ -125,11 +136,11 @@ All inference, embeddings, RAG, OCR, and delegated compute run through [`@qvac/s
 | Primitive | Role in QuorumGate |
 |---|---|
 | **LLM completion** | An instruct model (loaded as GGUF via the SDK) reasons over the assembled evidence and writes the explainable verdict memo, with tool calling for orchestration. |
-| **Embeddings + RAG** | Grounds the risk checks in the company's own supplier and payment history. |
-| **OCR** | Extracts fields from scanned or photographed invoices. |
+| **Embeddings + RAG** | Additive grounding over the company's supplier and payment history (being wired; the deterministic on-device lookup is the current grounding path and remains authoritative). |
+| **OCR** | Field extraction from scanned invoices (being wired; structured intake is the current input path). |
 | **P2P delegated inference** (Holepunch stack) | The four-eyes second review across two devices, with automatic fallback to local inference. |
 
-QuorumGate runs its reasoning locally through the QVAC SDK using an open instruct model (loaded as a GGUF; the exact model and quantization are pinned during the build and recorded in the reproducibility notes). The whole pipeline — OCR, embeddings/RAG, reasoning with tool calling, and P2P delegated inference — runs through `@qvac/sdk`, so the entire review is QVAC-SDK-native with no cloud dependency.
+QuorumGate runs its reasoning locally through the QVAC SDK using an open instruct model (loaded as a GGUF; the exact model and quantization are pinned during the build and recorded in the reproducibility notes). Everything that infers does so through `@qvac/sdk` — there is no cloud dependency anywhere in the review.
 
 The deterministic risk checks are implemented in plain, auditable code; the model reasons over their output rather than being trusted to enforce the rules itself.
 
@@ -158,7 +169,7 @@ quorumgate/
 │   ├── p2p-review/             Four-eyes delegated inference + local fallback
 │   └── ui/                     Reviewer desk UI
 ├── examples/
-│   ├── sample-invoices/        Synthetic invoices + supplier history
+│   ├── sample-data/            Synthetic payment requests + supplier history
 │   └── demo-script.md          Scripted demo walkthrough
 ├── docs/
 │   ├── architecture.md
