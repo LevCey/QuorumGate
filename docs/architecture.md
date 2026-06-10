@@ -25,8 +25,12 @@ Only a **minimal case bundle** crosses: curated payment fields (IBAN masked), th
 fired checks with evidence, and the floor — never raw documents, the message text, or
 the tax id. The bundle can additionally be sealed to the second reviewer's public key
 (ephemeral X25519 + AES-256-GCM), so its confidentiality does not depend on the
-transport. If no peer is available, the review falls back to a local second opinion —
-a verdict is always reached.
+transport. The sealed box is anonymous by construction — it encrypts *to* the
+recipient but does not authenticate the sender; sender identity comes from the
+authenticated P2P channel, and reviewer public keys are exchanged once, out of band,
+inside the company (a deliberate fit for the two-desk, one-team deployment). If no
+peer is available, the review falls back to a local second opinion — a verdict is
+always reached.
 
 The human reviewer makes the final decision (Approve / Hold / Escalate → Block); it
 is recorded with the reviewer's name and a timestamp. The system only recommends.

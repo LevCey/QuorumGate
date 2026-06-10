@@ -111,10 +111,11 @@ QuorumGate — local pre-payment review  [offline · no data left the device per
 Inference: offline stub (deterministic)
 
 Recommendation (system): HOLD
-Risk: 3 check(s) fired
+Risk: 4 check(s) fired
   - [high] iban_change: Destination IBAN is not among the supplier's verified accounts.
   - [high] sender_domain: Sender domain is a look-alike of an approved supplier domain.
   - [low] urgency_language: Pressure / urgency language detected.
+  - [medium] abnormal_amount: Amount exceeds the supplier's normal range.
 
 Memo:
   Offline stub: verdict HOLD follows the code-decided floor. Findings: [high] iban_change: ...
@@ -122,7 +123,7 @@ Memo:
 Suggested action:
   Verify the bank details with a known supplier contact before any payment.
 
-Final decision (human): BLOCK — Reviewer A (2026-06-10T19:26:24.168Z)
+Final decision (human): BLOCK — Reviewer A (2026-06-10T19:41:08.683Z)
 
 Evidence written: evidence/evidence-bundle.json, evidence/remote-call-disclosure.json
 ```
@@ -135,7 +136,7 @@ All inference, embeddings, RAG, OCR, and delegated compute run through [`@qvac/s
 
 | Primitive | Role in QuorumGate |
 |---|---|
-| **LLM completion** | An instruct model (loaded as GGUF via the SDK) reasons over the assembled evidence and writes the explainable verdict memo, with tool calling for orchestration. |
+| **LLM completion** | An instruct model (loaded as GGUF via the SDK) reasons over the assembled evidence and writes the explainable verdict memo. Tool-calling orchestration is a planned enhancement; the code-orchestrated path is the product. |
 | **Embeddings + RAG** | Additive grounding over the company's supplier and payment history (being wired; the deterministic on-device lookup is the current grounding path and remains authoritative). |
 | **OCR** | Field extraction from scanned invoices (being wired; structured intake is the current input path). |
 | **P2P delegated inference** (Holepunch stack) | The four-eyes second review across two devices, with automatic fallback to local inference. |

@@ -32,6 +32,21 @@ test('end to end: the BEC-trap sample is held even if the model would approve it
   const r = await review('request-bec-trap.json', mockModel('{"verdict":"APPROVE","memo":"Looks fine."}'));
   assert.equal(r.checks.find((c) => c.checkId === 'iban_change')?.status, 'FAIL');
   assert.equal(r.checks.find((c) => c.checkId === 'sender_domain')?.status, 'FAIL');
+  assert.equal(r.checks.find((c) => c.checkId === 'abnormal_amount')?.status, 'FAIL');
   assert.equal(r.modelProposed, 'APPROVE');
+  assert.equal(r.verdict, 'HOLD');
+});
+
+test('advisory-only sample: the floor permits APPROVE — only the urgency signal fires', async () => {
+  const r = await review('request-advisory-only.json', mockModel('{"verdict":"APPROVE","memo":"Routine invoice; the urgency is noted."}'));
+  const fired = r.checks.filter((c) => c.status === 'FAIL');
+  assert.deepEqual(fired.map((c) => c.checkId), ['urgency_language']);
+  assert.equal(r.floor.approveForbidden, false);
+  assert.equal(r.verdict, 'APPROVE');
+});
+
+test('advisory-only sample: the model may tighten APPROVE to HOLD — where its judgment visibly matters', async () => {
+  const r = await review('request-advisory-only.json', mockModel('{"verdict":"HOLD","memo":"The pressure language is uncharacteristic for this supplier; verify before paying."}'));
+  assert.equal(r.floor.floor, 'APPROVE');
   assert.equal(r.verdict, 'HOLD');
 });

@@ -1,0 +1,14 @@
+{
+  "supplierId": "acme-gmbh",
+  "supplierName": "Acme GmbH",
+  "destinationIban": "DE89 3704 0044 0532 0130 00",
+  "senderDomain": "acme.com",
+  "amount": 10100,
+  "currency": "EUR",
+  "invoiceNumber": "INV-2026-053",
+  "invoiceDate": "2026-06-09",
+  "taxId": "DE123456789",
+  "country": "DE",
+  "messageText": "Please pay today if possible — this is urgent, we need it before the end of the quarter.",
+  "approvalRef": "PO-2026-042"
+}

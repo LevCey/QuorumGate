@@ -3,7 +3,7 @@
   "supplierName": "Acme GmbH",
   "destinationIban": "GB29 NWBK 6016 1331 9268 19",
   "senderDomain": "acrne.com",
-  "amount": 10200,
+  "amount": 30500,
   "currency": "EUR",
   "invoiceNumber": "INV-2026-052",
   "invoiceDate": "2026-06-03",

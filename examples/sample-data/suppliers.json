@@ -9,5 +9,16 @@
     "approvedRefs": ["PO-2026-042"],
     "taxId": "DE123456789",
     "country": "DE"
+  },
+  {
+    "supplierId": "nordlicht-ag",
+    "supplierName": "Nordlicht AG",
+    "verifiedIbans": ["DE02 1203 0000 0000 2020 51", "DE44 5001 0517 5407 3249 31"],
+    "approvedDomains": ["nordlicht.de", "billing.nordlicht.de"],
+    "pastInvoiceNumbers": ["NL-889", "NL-901", "NL-915"],
+    "pastAmounts": [42000, 39500, 44800],
+    "approvedRefs": ["PO-2026-011", "PO-2026-038"],
+    "taxId": "DE987654321",
+    "country": "DE"
   }
 ]
