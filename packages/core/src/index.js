@@ -1,6 +1,6 @@
 // @ts-check
 export { runChecks } from './run-checks.js';
-export { computeVerdictFloor, clampVerdict } from './verdict.js';
+export { computeVerdictFloor, clampVerdict, moreConservative } from './verdict.js';
 export { DEFAULT_CONFIG } from './config.js';
 export { suggestAction } from './suggested-action.js';
 export { checkIbanChange } from './checks/iban-change.js';

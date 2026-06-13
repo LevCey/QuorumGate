@@ -22,14 +22,24 @@
  *
  * Validate on the demo hardware with a real model (see `scripts/spike-qvac.mjs`).
  *
- * @param {{ modelSrc: string, modelType?: string, modelConfig?: Record<string, unknown>, auditLog?: AuditLog }} options
+ * When `delegate` is given, the model runs on a peer device (QVAC delegated
+ * inference) — this is the four-eyes second reviewer. `modelSrc` is then resolved on
+ * the peer. Set `delegate.fallbackToLocal: false` to make an unreachable peer throw,
+ * so the caller's own fallback decides what happens (and the source stays honest).
+ *
+ * @param {{ modelSrc: string, modelType?: string, modelConfig?: Record<string, unknown>, auditLog?: AuditLog, delegate?: { providerPublicKey: string, fallbackToLocal?: boolean, timeout?: number } }} options
  * @returns {Promise<ReasoningModel & { modelId: string }>}
  */
-export async function createQvacModel({ modelSrc, modelType = 'llm', modelConfig, auditLog }) {
+export async function createQvacModel({ modelSrc, modelType = 'llm', modelConfig, auditLog, delegate }) {
   const { loadModel, completion } = await import('@qvac/sdk');
   const loadStart = Date.now();
-  const modelId = await loadModel({ modelType, modelSrc, ...(modelConfig ? { modelConfig } : {}) });
-  auditLog?.modelLoad({ modelId: String(modelId), modelSrc, loadMs: Date.now() - loadStart });
+  const modelId = await loadModel({
+    modelType,
+    modelSrc,
+    ...(modelConfig ? { modelConfig } : {}),
+    ...(delegate ? { delegate } : {}),
+  });
+  auditLog?.modelLoad({ modelId: String(modelId), modelSrc, loadMs: Date.now() - loadStart, delegated: !!delegate });
 
   return {
     modelId,

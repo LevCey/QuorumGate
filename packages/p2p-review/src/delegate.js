@@ -28,10 +28,11 @@ export function shouldDelegate(request, floor, config = DELEGATION_DEFAULTS) {
 }
 
 /**
- * A second reviewer's opinion on a delegated case.
+ * A second reviewer's opinion on a delegated case. Concurrence is computed by the
+ * orchestrator (which knows the first verdict), so it is optional here.
  * @typedef {object} SecondOpinion
  * @property {Verdict} verdict
- * @property {boolean} concur   Whether the second reviewer agrees with the first.
+ * @property {boolean} [concur]   Whether the second reviewer agrees with the first.
  * @property {string} [memo]
  */
 

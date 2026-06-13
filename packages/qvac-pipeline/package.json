@@ -7,6 +7,7 @@
   "license": "Apache-2.0",
   "main": "src/index.js",
   "dependencies": {
-    "@quorumgate/core": "*"
+    "@quorumgate/core": "*",
+    "@quorumgate/p2p-review": "*"
   }
 }

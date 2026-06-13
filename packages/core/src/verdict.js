@@ -57,3 +57,16 @@ export function computeVerdictFloor(results) {
 export function clampVerdict(proposed, floor) {
   return VERDICT_RANK[proposed] < VERDICT_RANK[floor.floor] ? floor.floor : proposed;
 }
+
+/**
+ * Combine two verdicts into the more conservative one. Used to fold a second
+ * reviewer's verdict into the first in a four-eyes review: the case takes the
+ * stricter of the two, so the second reviewer can only tighten the outcome.
+ *
+ * @param {Verdict} a
+ * @param {Verdict} b
+ * @returns {Verdict}
+ */
+export function moreConservative(a, b) {
+  return VERDICT_RANK[a] >= VERDICT_RANK[b] ? a : b;
+}

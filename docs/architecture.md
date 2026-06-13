@@ -19,18 +19,25 @@ the model may tighten a verdict (be more conservative), never loosen it. A malfo
 or missing model response falls back to the floor. The model is behind a small
 `ReasoningModel` interface, so the desk also runs with a deterministic offline stub.
 
-**Layer C — four-eyes delegation** (`packages/p2p-review`). High-value or high-risk
-cases are routed to a second reviewer's device over QVAC P2P delegated inference.
-Only a **minimal case bundle** crosses: curated payment fields (IBAN masked), the
-fired checks with evidence, and the floor — never raw documents, the message text, or
-the tax id. The bundle can additionally be sealed to the second reviewer's public key
-(ephemeral X25519 + AES-256-GCM), so its confidentiality does not depend on the
-transport. The sealed box is anonymous by construction — it encrypts *to* the
-recipient but does not authenticate the sender; sender identity comes from the
-authenticated P2P channel, and reviewer public keys are exchanged once, out of band,
-inside the company (a deliberate fit for the two-desk, one-team deployment). If no
-peer is available, the review falls back to a local second opinion — a verdict is
-always reached.
+**Layer C — four-eyes delegation** (`packages/p2p-review` + the desk orchestration).
+High-value or high-risk cases are routed to a second reviewer's device over QVAC P2P
+delegated inference: the second device's model independently reviews the case and
+returns its own verdict and memo, which the desk folds in by taking the more
+conservative of the two — so a second reviewer can only tighten the recommendation,
+never loosen it. Only a **minimal case bundle** crosses: curated payment fields (IBAN
+masked), the fired checks with evidence, and the floor — never raw documents, the
+message text, or the tax id. In the delegated-inference path the bundle travels to the
+peer as the model prompt over QVAC's P2P channel.
+
+For deployments where the second device runs the full review app (decrypting the
+bundle itself rather than receiving it as a delegated-inference prompt), `seal.js`
+provides app-layer encryption to the second reviewer's public key (ephemeral X25519 +
+AES-256-GCM), so confidentiality does not depend on the transport; it is built and
+tested. The sealed box encrypts *to* the recipient but does not authenticate the
+sender; sender identity comes from the authenticated P2P channel, and reviewer public
+keys are exchanged once, out of band, inside the company (a fit for the two-desk,
+one-team deployment). If no peer is available, the review falls back to a local second
+opinion — a verdict is always reached.
 
 The human reviewer makes the final decision (Approve / Hold / Escalate → Block); it
 is recorded with the reviewer's name and a timestamp. The system only recommends.

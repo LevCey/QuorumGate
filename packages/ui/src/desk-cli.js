@@ -1,6 +1,6 @@
 // @ts-check
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, AuditLog, suggestAction } from '@quorumgate/qvac-pipeline';
+import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, createDelegatedReviewer, AuditLog, suggestAction } from '@quorumgate/qvac-pipeline';
 import { createStubModel } from './stub-model.js';
 
 /**
@@ -10,24 +10,35 @@ import { createStubModel } from './stub-model.js';
  * inference performance is written. A human decision, if supplied, is recorded in the
  * bundle (the system recommends; the human decides).
  *
- * @param {{ requestPath: string, suppliersPath: string, outDir: string, modelSrc?: string, now?: string, decision?: string, reviewer?: string }} opts
+ * For a high-value/high-risk case, `peerKey` enables the four-eyes second review: the
+ * case is delegated to the peer device (QVAC delegated inference) addressed by that
+ * public key, and the peer's model — resolved at `peerModelSrc` on that device —
+ * returns an independent opinion. If the peer is unreachable the desk falls back to a
+ * local second opinion, so a verdict is always reached.
+ *
+ * @param {{ requestPath: string, suppliersPath: string, outDir: string, modelSrc?: string, now?: string, decision?: string, reviewer?: string, peerKey?: string, peerModelSrc?: string }} opts
  */
-export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, now, decision, reviewer }) {
+export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, now, decision, reviewer, peerKey, peerModelSrc }) {
   const store = new SupplierStore(JSON.parse(readFileSync(suppliersPath, 'utf8')));
   const request = JSON.parse(readFileSync(requestPath, 'utf8'));
 
-  let model;
-  let auditLog = null;
-  if (modelSrc) {
-    auditLog = new AuditLog();
-    model = await createQvacModel({ modelSrc, auditLog });
-  } else {
-    model = createStubModel();
+  const auditLog = modelSrc || peerKey ? new AuditLog() : null;
+  const model = modelSrc ? await createQvacModel({ modelSrc, auditLog }) : createStubModel();
+
+  let fourEyes;
+  if (peerKey) {
+    const peerSrc = peerModelSrc ?? modelSrc;
+    if (!peerSrc) {
+      throw new Error('Four-eyes (--peer) needs the peer model path: pass --peer-model <gguf-path-on-the-peer-device> (or --model).');
+    }
+    const transport = createDelegatedReviewer({ providerPublicKey: peerKey, modelSrc: peerSrc, auditLog });
+    fourEyes = { transport, localModel: model };
   }
 
   const result = await runDeskReview(request, store, model, {
     now,
     ...(decision ? { humanDecision: { decision, reviewer: reviewer ?? '' } } : {}),
+    ...(fourEyes ? { fourEyes } : {}),
   });
 
   mkdirSync(outDir, { recursive: true });
@@ -61,7 +72,7 @@ export function formatReport(result) {
   lines.push('');
   const clampNote =
     review.modelProposed !== review.verdict ? `  (model proposed ${review.modelProposed}, clamped to the code floor)` : '';
-  lines.push(`Recommendation (system): ${review.verdict}${clampNote}`);
+  lines.push(`Recommendation (system): ${bundle.verdict.final}${clampNote}`);
 
   const fired = review.checks.filter((c) => c.status === 'FAIL');
   if (fired.length) {
@@ -76,6 +87,12 @@ export function formatReport(result) {
 
   const action = suggestAction(review.checks);
   if (action) lines.push('', 'Suggested action:', `  ${action}`);
+
+  const sr = bundle.secondReview;
+  if (sr) {
+    lines.push('', `Second reviewer (${sr.reviewer}): ${sr.verdict} — ${sr.concur ? 'CONCUR' : 'DIFFERS'}`);
+    if (sr.memo) lines.push(`  ${sr.memo}`);
+  }
 
   const h = bundle.humanDecision;
   lines.push('', h ? `Final decision (human): ${h.decision} — ${h.reviewer} (${h.at})` : 'Final decision (human): pending');
@@ -92,7 +109,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   };
   if (!requestPath) {
     console.error(
-      'Usage: node packages/ui/src/desk-cli.js <request.json> [--suppliers <path>] [--model <gguf>] [--out <dir>] [--decide <APPROVE|HOLD|ESCALATE|BLOCK> --reviewer <name>]',
+      'Usage: node packages/ui/src/desk-cli.js <request.json> [--suppliers <path>] [--model <gguf>] [--out <dir>]\n' +
+        '       [--decide <APPROVE|HOLD|ESCALATE|BLOCK> --reviewer <name>]\n' +
+        '       [--peer <provider-public-key> --peer-model <gguf-path-on-peer>]   (four-eyes second review)',
     );
     process.exit(2);
   }
@@ -103,6 +122,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     modelSrc: flag('--model'),
     decision: flag('--decide'),
     reviewer: flag('--reviewer'),
+    peerKey: flag('--peer'),
+    peerModelSrc: flag('--peer-model'),
   });
   console.log(formatReport(result));
   const written = [result.outputs.bundlePath, result.outputs.disclosurePath, result.outputs.auditPath].filter(Boolean);

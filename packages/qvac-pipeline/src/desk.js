@@ -1,6 +1,9 @@
 // @ts-check
+import { moreConservative, clampVerdict } from '@quorumgate/core';
+import { shouldDelegate, buildCaseBundle, getSecondOpinion } from '@quorumgate/p2p-review';
 import { normalizeRequest } from './intake.js';
 import { reviewPayment } from './review.js';
+import { reviewBundle } from './review-bundle.js';
 import { buildEvidenceBundle } from './evidence.js';
 
 /** @typedef {import('./supplier-store.js').SupplierStore} SupplierStore */
@@ -8,6 +11,8 @@ import { buildEvidenceBundle } from './evidence.js';
 /** @typedef {import('./review.js').ReviewResult} ReviewResult */
 /** @typedef {import('./evidence.js').EvidenceBundle} EvidenceBundle */
 /** @typedef {import('../../core/src/types.js').CheckConfig} CheckConfig */
+/** @typedef {import('../../p2p-review/src/delegate.js').DelegateTransport} DelegateTransport */
+/** @typedef {import('../../p2p-review/src/delegate.js').DelegationConfig} DelegationConfig */
 
 /** The decisions a human reviewer may record. BLOCK is the Escalate→Block action. */
 export const HUMAN_DECISIONS = new Set(['APPROVE', 'HOLD', 'ESCALATE', 'BLOCK']);
@@ -50,13 +55,20 @@ export function makeHumanDecision(decision, reviewer, at) {
  * bundle. An unknown supplier is reviewed against an empty history, so the checks
  * (e.g. the IBAN-change check) naturally treat the destination as unverified.
  *
+ * Pass `options.fourEyes` to enable Layer C: a high-value or high-risk case gets an
+ * independent second opinion (from the peer device when a transport is configured,
+ * otherwise a local fallback). The second reviewer can only tighten the
+ * recommendation; a verdict is always reached.
+ *
  * @param {Record<string, unknown>} rawInput
  * @param {SupplierStore} store
  * @param {ReasoningModel} model
- * @param {{ config?: CheckConfig, now?: string, humanDecision?: { decision: string, reviewer: string } }} [options]
+ * @param {{ config?: CheckConfig, now?: string, humanDecision?: { decision: string, reviewer: string }, fourEyes?: { transport?: DelegateTransport | null, localModel?: ReasoningModel, config?: DelegationConfig } }} [options]
  * @returns {Promise<{
  *   intake: ReturnType<typeof normalizeRequest>,
  *   review: ReviewResult,
+ *   secondReview: { source: string, reviewer: string, verdict: string, concur: boolean, memo: string | null } | null,
+ *   recommendation: import('../../core/src/types.js').Verdict,
  *   bundle: EvidenceBundle,
  *   knownSupplier: boolean,
  * }>}
@@ -75,11 +87,42 @@ export async function runDeskReview(rawInput, store, model, options = {}) {
     options.config,
   );
 
+  // Layer C (four-eyes): an independent second opinion for high-value/high-risk cases.
+  let secondReview = null;
+  let recommendation = review.verdict;
+  if (options.fourEyes && shouldDelegate(intake.request, review.floor, options.fourEyes.config)) {
+    const caseBundle = buildCaseBundle(intake.request, review.checks, review.floor);
+    const localModel = options.fourEyes.localModel ?? model;
+    const { opinion, source } = await getSecondOpinion(
+      caseBundle,
+      options.fourEyes.transport ?? null,
+      async () => {
+        const r = await reviewBundle(caseBundle, localModel);
+        return { verdict: r.verdict, memo: r.memo };
+      },
+    );
+    recommendation = clampVerdict(moreConservative(review.verdict, opinion.verdict), review.floor);
+    secondReview = {
+      source,
+      reviewer: source === 'peer' ? 'second device (peer)' : 'local fallback',
+      verdict: opinion.verdict,
+      concur: opinion.verdict === review.verdict,
+      memo: opinion.memo ?? null,
+    };
+  }
+
   const humanDecision = options.humanDecision
     ? makeHumanDecision(options.humanDecision.decision, options.humanDecision.reviewer, options.now)
     : null;
 
-  const bundle = buildEvidenceBundle({ request: intake.request, review, humanDecision, generatedAt: options.now });
+  const bundle = buildEvidenceBundle({
+    request: intake.request,
+    review,
+    secondReview,
+    finalVerdict: recommendation,
+    humanDecision,
+    generatedAt: options.now,
+  });
 
-  return { intake, review, bundle, knownSupplier: history !== null };
+  return { intake, review, secondReview, recommendation, bundle, knownSupplier: history !== null };
 }

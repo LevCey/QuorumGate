@@ -49,12 +49,27 @@ invoices cannot talk the desk into approving.
 
 ## 4. Four-eyes across two devices (2:00–2:45)
 
-The case is high-value, so it is delegated to the senior reviewer's device
-(split-screen). Only a minimal encrypted case bundle crosses — masked IBAN, fired
-checks, evidence; no raw documents. The second device's independent local model
-returns its opinion: **[CONCUR — HOLD]**. Dual authorization, enforced across two
-machines, with round-trip latency of **[N s]**. If the peer were offline, the desk
-falls back to a local second opinion — a verdict is always reached.
+The case is high-value, so the desk delegates it to the senior reviewer's device over
+QVAC P2P (split-screen). On the second device, the reviewer is already running:
+
+```bash
+node scripts/spike-p2p.mjs provider          # prints PROVIDER_KEY=...
+```
+
+and the first device reviews with four-eyes enabled:
+
+```bash
+node packages/ui/src/desk-cli.js examples/sample-data/request-bec-trap.json \
+  --model <gguf> --peer <PROVIDER_KEY> --peer-model <gguf-on-peer> \
+  --decide BLOCK --reviewer "<name>"
+```
+
+Only the minimal case bundle crosses — masked IBAN, the fired checks, the floor; no
+raw documents, message text, or tax id. The second device's independent local model
+reviews the bundle and returns its own verdict and memo: the desk prints **Second
+reviewer (second device (peer)): HOLD — CONCUR**. Dual authorization, enforced across
+two machines, both offline; the delegated second opinion took ~4 s. If the peer were
+offline, the desk falls back to a local second opinion — a verdict is always reached.
 
 ## 5. The human stops it (2:45–3:15)
 

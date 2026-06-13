@@ -62,7 +62,7 @@ export async function reviewPayment(request, history, model, config) {
  * @param {string} text
  * @returns {{ verdict: Verdict | null, memo: string | null }}
  */
-function parseModelOutput(text) {
+export function parseModelOutput(text) {
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}');
   if (start === -1 || end <= start) return { verdict: null, memo: null };

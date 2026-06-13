@@ -29,11 +29,12 @@ export const EVIDENCE_SCHEMA_VERSION = 1;
  * @param {NormalizedRequest} input.request
  * @param {ReviewResult} input.review
  * @param {unknown} [input.secondReview]      Second reviewer's opinion (four-eyes), if any.
+ * @param {string} [input.finalVerdict]       Overall recommendation (first review combined with the second); defaults to the first review's verdict.
  * @param {string | null} [input.humanDecision]
  * @param {string} [input.generatedAt]        ISO timestamp (defaults to now).
  * @returns {EvidenceBundle}
  */
-export function buildEvidenceBundle({ request, review, secondReview = null, humanDecision = null, generatedAt }) {
+export function buildEvidenceBundle({ request, review, secondReview = null, finalVerdict, humanDecision = null, generatedAt }) {
   /** @type {EvidenceBundle['payment']} */
   const payment = { destinationIban: maskIban(request.destinationIban) };
   if (request.amount != null) payment.amount = request.amount;
@@ -52,7 +53,7 @@ export function buildEvidenceBundle({ request, review, secondReview = null, huma
       evidence: r.evidence,
     })),
     floor: review.floor,
-    verdict: { modelProposed: review.modelProposed, final: review.verdict, memo: review.memo },
+    verdict: { modelProposed: review.modelProposed, final: finalVerdict ?? review.verdict, memo: review.memo },
     secondReview,
     humanDecision,
   };
