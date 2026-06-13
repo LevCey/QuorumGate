@@ -259,6 +259,17 @@ Built during the QVAC Hackathon I window (June 1–21, 2026).
 - A graphical desk UI (today: the CLI).
 - The recorded demo video and the full cross-device evidence capture.
 
+## Limitations
+
+QuorumGate is a decision-support demonstration, not a certified financial control. Known limitations, stated plainly rather than implied away:
+
+- **The supplier baseline is assumed trusted.** The IBAN-change check — the primary BEC defense — trusts the stored `verifiedIbans` with no enrollment workflow, provenance, or integrity protection; poisoning that record would defeat the check. A production version needs dual-controlled IBAN enrollment and an integrity-protected, encrypted store.
+- **Reviewer identity is not authenticated.** The human reviewer is free text — no authentication, role binding, or signed attribution yet.
+- **The audit export is not cryptographically tamper-evident.** The bundle records provenance (code commit, model hash, thresholds) for traceability, but a user can still edit the JSON. Signing is on the roadmap.
+- **The second reviewer is anchored, not fully independent.** Over P2P it re-reasons on the curated case bundle and the first reviewer's floor; it does not re-run the deterministic checks, so it cannot detect manipulation upstream of the bundle. Full independence would mean sending more data to the peer — a deliberate privacy tradeoff.
+- **No case lifecycle.** The desk is a stateless one-shot review; HOLD/ESCALATE have no persisted next state, retention, or access control.
+- **Document ingestion (OCR) and embedding-based retrieval (RAG)** are in active development; today the input is structured intake and the grounding is a deterministic supplier lookup.
+
 ## Reproducibility and evidence
 
 - **Run it yourself:** `npm install && npm test` (91 tests), then the quickstart commands above — the offline path needs no model or network.
