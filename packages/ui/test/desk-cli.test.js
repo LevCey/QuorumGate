@@ -36,6 +36,9 @@ test('the desk reviews the BEC trap, holds it, and writes evidence (offline stub
     assert.equal(disclosure.calls.length, 0);
 
     assert.match(formatReport(result), /Recommendation \(system\): HOLD/);
+    assert.equal(bundle.verdict.memoSource, 'model-generated (not authoritative)');
+    assert.match(formatReport(result), /Not evaluated: \d+ check\(s\) could not run/);
+    assert.match(formatReport(result), /Memo \(model-generated/);
   });
 });
 

@@ -83,7 +83,13 @@ export function formatReport(result) {
   } else {
     lines.push('Risk: no checks fired');
   }
-  lines.push('', 'Memo:', `  ${review.memo}`);
+
+  const skipped = review.checks.filter((c) => c.status === 'SKIP');
+  if (skipped.length) {
+    lines.push(`Not evaluated: ${skipped.length} check(s) could not run — ${skipped.map((c) => c.checkId).join(', ')} (insufficient data)`);
+  }
+
+  lines.push('', 'Memo (model-generated — the fired checks above are the authoritative basis):', `  ${review.memo}`);
 
   const action = suggestAction(review.checks);
   if (action) lines.push('', 'Suggested action:', `  ${action}`);

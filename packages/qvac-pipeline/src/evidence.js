@@ -53,7 +53,12 @@ export function buildEvidenceBundle({ request, review, secondReview = null, fina
       evidence: r.evidence,
     })),
     floor: review.floor,
-    verdict: { modelProposed: review.modelProposed, final: finalVerdict ?? review.verdict, memo: review.memo },
+    verdict: {
+      modelProposed: review.modelProposed,
+      final: finalVerdict ?? review.verdict,
+      memo: review.memo,
+      memoSource: 'model-generated (not authoritative)',
+    },
     secondReview,
     humanDecision,
   };
