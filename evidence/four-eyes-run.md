@@ -1,10 +1,13 @@
 # Four-eyes delegated review — recorded run
 
-A real two-process run of the four-eyes second review over QVAC delegated inference
-(June 13, 2026). Reviewer A runs the desk; Reviewer B runs a provider that serves
-inference over the Holepunch DHT. The same script runs across two laptops (Linux ↔
-Windows 11); this capture is the single-machine two-process run used for the
-measurements.
+The four-eyes second review runs over QVAC delegated inference: Reviewer A runs the
+desk; Reviewer B runs a provider that serves inference over the Holepunch DHT. For a
+high-value or high-risk case, A delegates an independent review of the minimal case
+bundle to B; B's model returns its own verdict and memo, which the desk folds in (the
+second reviewer can only tighten, never loosen).
+
+Validated two ways (June 13, 2026): across two physical laptops over a home LAN, and
+as a single-machine two-process run for the per-step measurements.
 
 ## Commands
 
@@ -18,29 +21,40 @@ node packages/ui/src/desk-cli.js examples/sample-data/request-bec-trap.json \
   --decide BLOCK --reviewer "Reviewer A"
 ```
 
-## What happened
+## Two-device run (Linux consumer ↔ Windows 11 provider, home LAN)
 
-1. Reviewer A reviewed the trap locally — four checks fired (IBAN change, look-alike
-   domain, abnormal amount, urgency), code floor HOLD, A's verdict **HOLD**.
-2. The case is high-value, so the desk built the minimal case bundle and delegated it
-   to B. Only the bundle crossed the link — masked IBAN, the fired checks, the floor;
-   no raw documents, message text, or tax id.
-3. B's model independently reviewed the bundle and returned its own memo and verdict:
-   **HOLD — CONCUR**. The combined recommendation stayed HOLD.
-4. The human recorded **BLOCK**. The evidence bundle records the second review with
-   `source: "peer"`.
+- Reviewer A reviewed the trap locally — four checks fired (IBAN change, look-alike
+  domain, abnormal amount, urgency), code floor HOLD, A's verdict **HOLD**.
+- The desk delegated the minimal bundle to the Windows 11 peer. The consumer logged
+  the delegated request, the direct DHT connection, and the peer connection to the
+  provider's public key; the Windows side independently logged loading its own model
+  (at its local path) and running the completion (~7.9 s) — the two sides' timings
+  agree.
+- B's model returned its own memo and verdict: **HOLD — CONCUR**. The evidence bundle
+  records `secondReview.source: "peer"`.
+- **Reliability: 4/4 runs reached the peer** (`source: "peer"`, no fallback), B
+  HOLD/CONCUR each time; delegated second-opinion completion 6.9–9.3 s (Llama 3.2 1B
+  Q4_K over the LAN). The sample is small and same-LAN.
+- With the peer stopped, the same review falls back to a local second opinion and
+  still reaches a verdict (I-5).
 
-The SDK logs confirmed real delegation (`Sending delegated loadModel request to
-provider`, `Peer connection opened`). With the peer stopped, the same review falls
-back to a local second opinion and still reaches a verdict (I-5).
+## Single-machine two-process run (per-step measurements)
 
-## Measured (from the run's `audit-log.jsonl`, Llama 3.2 1B Q4_K, demo hardware)
+Both roles on one machine, from the run's `audit-log.jsonl`:
 
 | Step | Load | TTFT | Tokens | Tokens/sec |
 |---|---|---|---|---|
 | Reviewer A — local review | 2.4 s | 0.9 s | 84 | 19.4 |
-| Reviewer B — delegated second opinion (peer) | 1.9 s | 1.1 s | 80 | 18.4 |
+| Reviewer B — delegated second opinion | 1.9 s | 1.1 s | 80 | 18.4 |
 
-The delegated second opinion runs at essentially local speed (same hardware here; the
-P2P transport overhead is small). Two-laptop LAN round-trip reliability is recorded
+On one machine the delegated second opinion runs at essentially local speed; across
+two laptops the delegated completion is 6.9–9.3 s, the extra time being the LAN round
+trip and the peer-side model load. Raw P2P transport reliability is recorded
 separately: 10/10 rounds, median 882 ms (reproduce with `scripts/spike-p2p.mjs`).
+
+## Data that crosses
+
+Only the minimal case bundle — masked IBAN, the fired checks with evidence, and the
+floor; never raw documents, the message text, or the tax id. In the delegated-inference
+path the bundle travels to the peer as the model prompt over QVAC's P2P channel. All
+inference is local to the two devices; the remote-call disclosure is empty.
