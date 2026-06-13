@@ -1,7 +1,8 @@
 // @ts-check
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, createDelegatedReviewer, AuditLog, suggestAction } from '@quorumgate/qvac-pipeline';
+import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, createDelegatedReviewer, AuditLog, suggestAction, DEFAULT_CONFIG } from '@quorumgate/qvac-pipeline';
 import { createStubModel } from './stub-model.js';
+import { gitHead, modelProvenance } from './provenance.js';
 
 /**
  * Run the reviewer desk on one payment request and write the evidence artifacts to
@@ -35,8 +36,15 @@ export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, no
     fourEyes = { transport, localModel: model };
   }
 
+  const provenance = {
+    codeVersion: gitHead(process.cwd()),
+    config: DEFAULT_CONFIG,
+    model: await modelProvenance(modelSrc),
+  };
+
   const result = await runDeskReview(request, store, model, {
     now,
+    provenance,
     ...(decision ? { humanDecision: { decision, reviewer: reviewer ?? '' } } : {}),
     ...(fourEyes ? { fourEyes } : {}),
   });

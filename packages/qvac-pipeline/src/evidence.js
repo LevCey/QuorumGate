@@ -3,7 +3,7 @@
 /** @typedef {import('../../core/src/verdict.js').VerdictFloor} VerdictFloor */
 /** @typedef {import('./review.js').ReviewResult} ReviewResult */
 
-export const EVIDENCE_SCHEMA_VERSION = 1;
+export const EVIDENCE_SCHEMA_VERSION = 2;
 
 /**
  * The audit-evidence bundle exported for a completed review (R9.1).
@@ -14,9 +14,10 @@ export const EVIDENCE_SCHEMA_VERSION = 1;
  * @property {{ amount?: number, currency?: string, invoiceNumber?: string, destinationIban: string }} payment
  * @property {{ checkId: string, status: string, severity: string, evidence: Record<string, unknown> }[]} checks
  * @property {VerdictFloor} floor
- * @property {{ modelProposed: string, final: string, memo: string }} verdict
+ * @property {{ modelProposed: string, final: string, memo: string, memoSource: string }} verdict
  * @property {unknown} secondReview
  * @property {string | null} humanDecision
+ * @property {unknown} provenance
  */
 
 /**
@@ -30,11 +31,12 @@ export const EVIDENCE_SCHEMA_VERSION = 1;
  * @param {ReviewResult} input.review
  * @param {unknown} [input.secondReview]      Second reviewer's opinion (four-eyes), if any.
  * @param {string} [input.finalVerdict]       Overall recommendation (first review combined with the second); defaults to the first review's verdict.
+ * @param {unknown} [input.provenance]        What produced this bundle (code commit, model, thresholds) — traceability, not tamper-evidence.
  * @param {string | null} [input.humanDecision]
  * @param {string} [input.generatedAt]        ISO timestamp (defaults to now).
  * @returns {EvidenceBundle}
  */
-export function buildEvidenceBundle({ request, review, secondReview = null, finalVerdict, humanDecision = null, generatedAt }) {
+export function buildEvidenceBundle({ request, review, secondReview = null, finalVerdict, provenance = null, humanDecision = null, generatedAt }) {
   /** @type {EvidenceBundle['payment']} */
   const payment = { destinationIban: maskIban(request.destinationIban) };
   if (request.amount != null) payment.amount = request.amount;
@@ -44,6 +46,7 @@ export function buildEvidenceBundle({ request, review, secondReview = null, fina
   return {
     schemaVersion: EVIDENCE_SCHEMA_VERSION,
     generatedAt: generatedAt ?? new Date().toISOString(),
+    provenance,
     supplier: { id: request.supplierId, ...(request.supplierName ? { name: request.supplierName } : {}) },
     payment,
     checks: review.checks.map((r) => ({

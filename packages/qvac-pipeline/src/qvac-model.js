@@ -1,4 +1,5 @@
 // @ts-check
+import { basename } from 'node:path';
 /** @typedef {import('./model.js').ReasoningModel} ReasoningModel */
 /** @typedef {import('./model.js').CompletionRequest} CompletionRequest */
 /** @typedef {import('./model.js').CompletionResult} CompletionResult */
@@ -39,7 +40,7 @@ export async function createQvacModel({ modelSrc, modelType = 'llm', modelConfig
     ...(modelConfig ? { modelConfig } : {}),
     ...(delegate ? { delegate } : {}),
   });
-  auditLog?.modelLoad({ modelId: String(modelId), modelSrc, loadMs: Date.now() - loadStart, delegated: !!delegate });
+  auditLog?.modelLoad({ modelId: String(modelId), model: basename(String(modelSrc)), loadMs: Date.now() - loadStart, delegated: !!delegate });
 
   return {
     modelId,

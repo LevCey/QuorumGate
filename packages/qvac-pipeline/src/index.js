@@ -9,4 +9,4 @@ export { runDeskReview } from './desk.js';
 export { reviewBundle } from './review-bundle.js';
 export { createDelegatedReviewer } from './four-eyes.js';
 export { AuditLog } from './audit-log.js';
-export { suggestAction } from '@quorumgate/core';
+export { suggestAction, DEFAULT_CONFIG } from '@quorumgate/core';

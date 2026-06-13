@@ -28,13 +28,21 @@ const review = {
 
 test('the bundle records the verdict, floor, checks, and masked payment', () => {
   const b = buildEvidenceBundle({ request, review, generatedAt: '2026-06-05T00:00:00Z' });
-  assert.equal(b.schemaVersion, 1);
+  assert.equal(b.schemaVersion, 2);
   assert.equal(b.generatedAt, '2026-06-05T00:00:00Z');
   assert.equal(b.verdict.final, 'HOLD');
   assert.equal(b.verdict.modelProposed, 'APPROVE');
+  assert.equal(b.verdict.memoSource, 'model-generated (not authoritative)');
   assert.match(b.payment.destinationIban, /^•+6819$/);
   assert.equal(b.checks.length, 2);
   assert.equal(b.humanDecision, null);
+  assert.equal(b.provenance, null);
+});
+
+test('the bundle records provenance when supplied (traceability, not tamper-evidence)', () => {
+  const provenance = { codeVersion: 'abc123', config: {}, model: { type: 'offline-stub' } };
+  const b = buildEvidenceBundle({ request, review, provenance });
+  assert.deepEqual(b.provenance, provenance);
 });
 
 test('the bundle does not leak the raw message or the tax id', () => {

@@ -63,7 +63,7 @@ export function makeHumanDecision(decision, reviewer, at) {
  * @param {Record<string, unknown>} rawInput
  * @param {SupplierStore} store
  * @param {ReasoningModel} model
- * @param {{ config?: CheckConfig, now?: string, humanDecision?: { decision: string, reviewer: string }, fourEyes?: { transport?: DelegateTransport | null, localModel?: ReasoningModel, config?: DelegationConfig } }} [options]
+ * @param {{ config?: CheckConfig, now?: string, humanDecision?: { decision: string, reviewer: string }, fourEyes?: { transport?: DelegateTransport | null, localModel?: ReasoningModel, config?: DelegationConfig }, provenance?: unknown }} [options]
  * @returns {Promise<{
  *   intake: ReturnType<typeof normalizeRequest>,
  *   review: ReviewResult,
@@ -120,6 +120,7 @@ export async function runDeskReview(rawInput, store, model, options = {}) {
     review,
     secondReview,
     finalVerdict: recommendation,
+    provenance: options.provenance,
     humanDecision,
     generatedAt: options.now,
   });
