@@ -75,8 +75,10 @@ Only the minimal case bundle crosses — masked IBAN, the fired checks, the floo
 raw documents, message text, or tax id. The second device's independent local model
 reviews the bundle and returns its own verdict and memo: the desk prints **Second
 reviewer (second device (peer)): HOLD — CONCUR**. Dual authorization, enforced across
-two machines, both offline; the delegated second opinion took ~4 s. If the peer were
-offline, the desk falls back to a local second opinion — a verdict is always reached.
+two machines, both offline. The peer runs its own Qwen3-4B over the P2P channel, so the
+second opinion's load and inference take about two minutes on the demo laptops —
+condensed in the recording. If the peer were offline, the desk falls back to a local
+second opinion — a verdict is always reached.
 
 ## 5. The human stops it (2:45–3:15)
 

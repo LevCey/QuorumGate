@@ -67,3 +67,17 @@ enabled. The case delegated to the peer (`secondReview.source: "peer"`,
 `independent: true`, CONCUR — HOLD), and the exported bundle is Ed25519-signed and
 verifies (`scripts/verify-bundle.mjs` → VALID; editing any field → INVALID). The
 committed artifact is `evidence/sample-four-eyes-bundle.json`.
+
+## Peer model choice (June 14, 2026) — a capable model for a credible memo
+
+The runs above used Llama 3.2 1B on the peer: a fast round-trip and the correct HOLD
+verdict (the floor clamp holds whatever the peer model returns). But a 1B is too weak to
+reason over the bundle — it returned a confident memo that contradicted the fired checks.
+For a credible independent second opinion the demo therefore runs **Qwen3-4B on the peer
+too**. Re-run Linux consumer ↔ Windows 11 provider (`--sign`): the peer returned a correct
+concurring memo (the high-severity `iban_change` and `sender_domain` justify holding),
+`secondReview.source: "peer"`, `independent: true`, CONCUR — HOLD, signed bundle VALID.
+The latency is higher and dominated by the peer-side model load — about two minutes on the
+demo laptop. The peer model is bounded (explicit `ctx_size` and a generated-token cap; see
+`createDelegatedReviewer`) so it always returns instead of overflowing or running away, and
+the four-eyes timeout is 180 s to cover a real model's load and inference on the peer.
