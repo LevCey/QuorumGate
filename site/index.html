@@ -74,6 +74,7 @@
 
   pre { background: #060a0f; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; overflow-x: auto; font-size: 13.5px; color: #cfe6da; }
   pre .c { color: #6f8294; }
+  .shot { display: block; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; margin-top: 4px; }
 
   .note { font-size: 14px; color: var(--muted); margin-top: 14px; }
   .note b { color: var(--warn); }
@@ -200,9 +201,11 @@ node packages/ui/src/desk-cli.js examples/sample-data/request-bec-trap.json</pre
 <section id="demo">
   <div class="wrap">
     <h2>Demo</h2>
-    <p class="sub">A 3-minute walkthrough: the trap, the local catch, the four-eyes split-screen, the block.</p>
-    <!-- TODO: replace this block with the unlisted YouTube embed once the video is uploaded -->
-    <p style="color:var(--muted)">Demo video coming soon — meanwhile, <a href="#run">run the offline review</a> or read the <a href="https://github.com/LevCey/QuorumGate">source</a>.</p>
+    <p class="sub">The offline desk catching the synthetic BEC trap — a capture of the real CLI, reproducible on one machine.</p>
+    <img class="shot" src="demo.gif" width="997" height="806" loading="lazy"
+         alt="QuorumGate CLI reviewing the BEC-trap invoice offline: the deterministic checks fire — changed IBAN, look-alike sender domain, abnormal amount, urgency language — the system recommendation is HOLD, and the human reviewer records a BLOCK decision." />
+    <!-- TODO: add the full 3-minute walkthrough (the four-eyes split-screen across two devices) as an unlisted YouTube embed once recorded. -->
+    <p class="note">The full 3-minute walkthrough — including the four-eyes second review split-screen across two devices — is coming. Meanwhile, <a href="#run">run it yourself</a> or read the <a href="https://github.com/LevCey/QuorumGate">source</a>.</p>
   </div>
 </section>
 
