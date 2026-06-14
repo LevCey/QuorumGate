@@ -27,7 +27,12 @@ conservative of the two — so a second reviewer can only tighten the recommenda
 never loosen it. Only a **minimal case bundle** crosses: curated payment fields (IBAN
 masked), the fired checks with evidence, and the floor — never raw documents, the
 message text, or the tax id. In the delegated-inference path the bundle travels to the
-peer as the model prompt over QVAC's P2P channel.
+peer as the model prompt over QVAC's P2P transport (HyperDHT), which encrypts every
+connection end to end with the Noise protocol (`@hyperswarm/secret-stream`, Noise XX +
+libsodium) — so the bundle is encrypted in transit between the two devices, and the DHT
+and any relays never see plaintext. The peer's SDK necessarily decrypts the prompt to
+run the model; the app-layer box below covers the variant where even the peer's SDK
+should not see the bundle.
 
 For deployments where the second device runs the full review app (decrypting the
 bundle itself rather than receiving it as a delegated-inference prompt), `seal.js`
