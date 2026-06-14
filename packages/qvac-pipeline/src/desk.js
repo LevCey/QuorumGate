@@ -13,6 +13,8 @@ import { buildEvidenceBundle } from './evidence.js';
 /** @typedef {import('../../core/src/types.js').CheckConfig} CheckConfig */
 /** @typedef {import('../../p2p-review/src/delegate.js').DelegateTransport} DelegateTransport */
 /** @typedef {import('../../p2p-review/src/delegate.js').DelegationConfig} DelegationConfig */
+/** @typedef {import('./supplier-memory.js').SupplierMemory} SupplierMemory */
+/** @typedef {import('./embedder.js').Embedder} Embedder */
 
 /** The decisions a human reviewer may record. BLOCK is the Escalate→Block action. */
 export const HUMAN_DECISIONS = new Set(['APPROVE', 'HOLD', 'ESCALATE', 'BLOCK']);
@@ -63,7 +65,7 @@ export function makeHumanDecision(decision, reviewer, at) {
  * @param {Record<string, unknown>} rawInput
  * @param {SupplierStore} store
  * @param {ReasoningModel} model
- * @param {{ config?: CheckConfig, now?: string, humanDecision?: { decision: string, reviewer: string }, fourEyes?: { transport?: DelegateTransport | null, localModel?: ReasoningModel, config?: DelegationConfig, requirePeer?: boolean }, provenance?: unknown }} [options]
+ * @param {{ config?: CheckConfig, now?: string, humanDecision?: { decision: string, reviewer: string }, fourEyes?: { transport?: DelegateTransport | null, localModel?: ReasoningModel, config?: DelegationConfig, requirePeer?: boolean }, retrieval?: { memory: SupplierMemory, embedder: Embedder }, provenance?: unknown }} [options]
  * @returns {Promise<{
  *   intake: ReturnType<typeof normalizeRequest>,
  *   review: ReviewResult,
@@ -80,11 +82,22 @@ export async function runDeskReview(rawInput, store, model, options = {}) {
   }
 
   const history = store.lookup(intake.request.supplierId);
+
+  // Optional local RAG: ground the memo in the company's own supplier records. Additive
+  // only — the deterministic checks and the verdict floor are unaffected.
+  let grounding;
+  if (options.retrieval) {
+    const query = `${intake.request.supplierName ?? intake.request.supplierId} ${intake.request.amount ?? ''} ${intake.request.currency ?? ''}`.trim();
+    const hits = await options.retrieval.memory.retrieve(query, options.retrieval.embedder);
+    grounding = hits.map((h) => h.text).join('\n');
+  }
+
   const review = await reviewPayment(
     intake.request,
     history ?? { supplierId: intake.request.supplierId, verifiedIbans: [] },
     model,
     options.config,
+    grounding,
   );
 
   // Layer C (four-eyes): an independent second opinion for high-value/high-risk cases.

@@ -33,14 +33,15 @@ const VERDICTS = new Set(['APPROVE', 'HOLD', 'ESCALATE']);
  * @param {SupplierHistory} history
  * @param {ReasoningModel} model
  * @param {CheckConfig} [config]
+ * @param {string} [grounding]  Retrieved company-record context (RAG); additive grounding for the memo only.
  * @returns {Promise<ReviewResult>}
  */
-export async function reviewPayment(request, history, model, config) {
+export async function reviewPayment(request, history, model, config, grounding) {
   const { results, floor } = runChecks(request, history, config);
 
   const completion = await model.complete({
     system: buildSystemPrompt(),
-    prompt: buildUserPrompt(request, results, floor),
+    prompt: buildUserPrompt(request, results, floor, grounding),
   });
 
   const parsed = parseModelOutput(completion.text);

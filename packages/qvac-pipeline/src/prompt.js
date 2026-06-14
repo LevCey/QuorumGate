@@ -86,9 +86,10 @@ export function buildBundleUserPrompt(bundle) {
  * @param {NormalizedRequest} request
  * @param {CheckResult[]} results
  * @param {VerdictFloor} floor
+ * @param {string} [grounding]  Retrieved company-record context (RAG), additive only.
  * @returns {string}
  */
-export function buildUserPrompt(request, results, floor) {
+export function buildUserPrompt(request, results, floor, grounding) {
   const fired = results.filter((r) => r.status === 'FAIL');
   const lines = [`Supplier: ${request.supplierId}`];
   if (request.amount != null) {
@@ -107,6 +108,9 @@ export function buildUserPrompt(request, results, floor) {
     for (const r of fired) {
       lines.push(`- [${r.severity}] ${r.checkId}: ${describe(r.evidence)}`);
     }
+  }
+  if (grounding) {
+    lines.push('', 'Company records (for grounding only — the checks above are authoritative):', grounding);
   }
   return lines.join('\n');
 }

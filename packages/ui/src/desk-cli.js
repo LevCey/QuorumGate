@@ -1,6 +1,6 @@
 // @ts-check
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, createDelegatedReviewer, AuditLog, suggestAction, DEFAULT_CONFIG } from '@quorumgate/qvac-pipeline';
+import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, createDelegatedReviewer, createQvacEmbedder, SupplierMemory, AuditLog, suggestAction, DEFAULT_CONFIG } from '@quorumgate/qvac-pipeline';
 import { createStubModel } from './stub-model.js';
 import { gitHead, modelProvenance } from './provenance.js';
 
@@ -19,8 +19,9 @@ import { gitHead, modelProvenance } from './provenance.js';
  *
  * @param {{ requestPath: string, suppliersPath: string, outDir: string, modelSrc?: string, now?: string, decision?: string, reviewer?: string, peerKey?: string, peerModelSrc?: string, requirePeer?: boolean }} opts
  */
-export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, now, decision, reviewer, peerKey, peerModelSrc, requirePeer }) {
-  const store = new SupplierStore(JSON.parse(readFileSync(suppliersPath, 'utf8')));
+export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, now, decision, reviewer, peerKey, peerModelSrc, requirePeer, embedModelSrc }) {
+  const suppliersData = JSON.parse(readFileSync(suppliersPath, 'utf8'));
+  const store = new SupplierStore(suppliersData);
   const request = JSON.parse(readFileSync(requestPath, 'utf8'));
 
   const auditLog = modelSrc || peerKey ? new AuditLog() : null;
@@ -42,11 +43,18 @@ export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, no
     model: await modelProvenance(modelSrc),
   };
 
+  let retrieval;
+  if (embedModelSrc) {
+    const embedder = await createQvacEmbedder({ modelSrc: embedModelSrc });
+    retrieval = { memory: await SupplierMemory.build(suppliersData, embedder), embedder };
+  }
+
   const result = await runDeskReview(request, store, model, {
     now,
     provenance,
     ...(decision ? { humanDecision: { decision, reviewer: reviewer ?? '' } } : {}),
     ...(fourEyes ? { fourEyes } : {}),
+    ...(retrieval ? { retrieval } : {}),
   });
 
   mkdirSync(outDir, { recursive: true });
@@ -130,7 +138,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   };
   if (!requestPath) {
     console.error(
-      'Usage: node packages/ui/src/desk-cli.js <request.json> [--suppliers <path>] [--model <gguf>] [--out <dir>]\n' +
+      'Usage: node packages/ui/src/desk-cli.js <request.json> [--suppliers <path>] [--model <gguf>] [--embed-model <embedding-gguf>] [--out <dir>]\n' +
         '       [--decide <APPROVE|HOLD|ESCALATE|BLOCK> --reviewer <name>]\n' +
         '       [--peer <provider-public-key> --peer-model <gguf-path-on-peer> [--require-peer]]   (four-eyes second review)',
     );
@@ -146,6 +154,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     peerKey: flag('--peer'),
     peerModelSrc: flag('--peer-model'),
     requirePeer: args.includes('--require-peer'),
+    embedModelSrc: flag('--embed-model'),
   });
   console.log(formatReport(result));
   const written = [result.outputs.bundlePath, result.outputs.disclosurePath, result.outputs.auditPath].filter(Boolean);
