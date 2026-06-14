@@ -6,6 +6,7 @@ export { SupplierStore } from './supplier-store.js';
 export { createQvacModel } from './qvac-model.js';
 export { createQvacEmbedder } from './qvac-embedder.js';
 export { createQvacOcr } from './qvac-ocr.js';
+export { quietSdkLogs } from './quiet-sdk.js';
 export { ocrBlocksToText, lowConfidenceBlocks } from './ocr.js';
 export { parseInvoiceFields, resolveSupplierId } from './invoice-ocr.js';
 export { buildEvidenceBundle, remoteCallDisclosure } from './evidence.js';

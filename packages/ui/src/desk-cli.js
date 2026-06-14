@@ -1,6 +1,6 @@
 // @ts-check
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, createDelegatedReviewer, createQvacEmbedder, SupplierMemory, createQvacOcr, ocrBlocksToText, lowConfidenceBlocks, parseInvoiceFields, resolveSupplierId, AuditLog, suggestAction, DEFAULT_CONFIG, signEvidenceBundle, generateSigningKeypair } from '@quorumgate/qvac-pipeline';
+import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, createDelegatedReviewer, createQvacEmbedder, SupplierMemory, createQvacOcr, ocrBlocksToText, lowConfidenceBlocks, parseInvoiceFields, resolveSupplierId, AuditLog, suggestAction, DEFAULT_CONFIG, signEvidenceBundle, generateSigningKeypair, quietSdkLogs } from '@quorumgate/qvac-pipeline';
 import { createStubModel } from './stub-model.js';
 import { gitHead, modelProvenance } from './provenance.js';
 
@@ -20,6 +20,8 @@ import { gitHead, modelProvenance } from './provenance.js';
  * @param {{ requestPath: string, suppliersPath: string, outDir: string, modelSrc?: string, now?: string, decision?: string, reviewer?: string, peerKey?: string, peerModelSrc?: string, requirePeer?: boolean }} opts
  */
 export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, now, decision, reviewer, peerKey, peerModelSrc, requirePeer, embedModelSrc, sign, invoiceImage, ocrModelSrc }) {
+  // Keep the SDK's init/worker chatter out of the desk's report (set QG_VERBOSE=1 to see it).
+  if (!process.env.QG_VERBOSE) await quietSdkLogs();
   const suppliersData = JSON.parse(readFileSync(suppliersPath, 'utf8'));
   const store = new SupplierStore(suppliersData);
 
