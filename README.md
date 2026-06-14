@@ -9,7 +9,7 @@
 
 **Website:** [quorumgate.com](https://quorumgate.com)
 
-> **Status — built for [QVAC Hackathon I — Unleash Edge AI](https://dorahacks.io/hackathon/qvac-unleach-edge-ai-i/detail) (build period June 1–21, 2026).** The local review desk works today: deterministic risk checks, an explainable memo from a real local model via the QVAC SDK, and a four-eyes second review delegated peer-to-peer to a second device. Optional embedding-based RAG grounds the memo in the company's own records (`--embed-model`, validated on hardware); OCR over scanned invoices is in development (the desk uses structured intake today). All inference runs locally through the QVAC SDK; there is no cloud dependency.
+> **Status — built for [QVAC Hackathon I — Unleash Edge AI](https://dorahacks.io/hackathon/qvac-unleach-edge-ai-i/detail) (build period June 1–21, 2026).** The local review desk works today: deterministic risk checks, an explainable memo from a real local model via the QVAC SDK, and a four-eyes second review delegated peer-to-peer to a second device. Optional embedding-based RAG grounds the memo in the company's own records (`--embed-model`), and the desk can read fields straight from a scanned invoice image via OCR (`--invoice-image`) — both validated on hardware. All inference runs locally through the QVAC SDK; there is no cloud dependency.
 
 ---
 
@@ -33,7 +33,7 @@ QuorumGate is a local-first pre-payment review desk that runs entirely on the fi
 
 A payment request — invoice + supplier email + optional purchase order — is dropped into the desk, which:
 
-1. **Reads** the payment request locally — structured intake today, with OCR over scanned invoices (via the SDK) as the input path being wired up.
+1. **Reads** the payment request locally — structured intake, or OCR over a scanned invoice image (via the SDK, `--invoice-image`).
 2. **Grounds** it against the company's own supplier and payment history — a deterministic on-device supplier-history lookup, with optional embedding-based retrieval (via the SDK, `--embed-model`) as additive grounding.
 3. **Checks** them against a deterministic risk-rule set.
 4. **Reasons** over the assembled evidence with a local reasoning model (an instruct model run through the QVAC SDK) and produces a structured verdict — **Approve / Hold / Escalate** — with an explainable memo that cites the grounding evidence.
@@ -49,7 +49,7 @@ This "second reviewer on a second device, fully offline" step maps a real compli
 
 - **Confidentiality is the product.** Supplier IBANs, invoice contents, and payment history must never leave the company perimeter. Local inference is not a feature here — it is the only legally and commercially adoptable architecture.
 - **Peer-to-peer delegated inference is QVAC-native.** The four-eyes workflow — one reviewer's device handing a case to another's — is a direct expression of QVAC's delegated-inference primitive over the Holepunch stack.
-- **One SDK, full pipeline.** Local LLM reasoning, embedding-based retrieval, and P2P delegated inference run behind a single cross-platform `@qvac/sdk` import (OCR is in development; see [Project status](#project-status)). There is no cloud and no external AI API — the only network use is encrypted peer-to-peer discovery and delegation over the public Holepunch DHT, and no cleartext payload ever leaves the company-controlled devices.
+- **One SDK, full pipeline.** Local LLM reasoning, embedding-based retrieval, OCR, and P2P delegated inference all run behind a single cross-platform `@qvac/sdk` import. There is no cloud and no external AI API — the only network use is encrypted peer-to-peer discovery and delegation over the public Holepunch DHT, and no cleartext payload ever leaves the company-controlled devices.
 
 ## Architecture
 
@@ -85,7 +85,7 @@ This "second reviewer on a second device, fully offline" step maps a real compli
                 Audit-evidence bundle (local export)
 ```
 
-_The grounding is a deterministic supplier lookup, with optional embedding-based RAG (`--embed-model`) as additive context; the input is structured intake, with OCR over scanned invoices in development (see [Project status](#project-status))._
+_The grounding is a deterministic supplier lookup, with optional embedding-based RAG (`--embed-model`) as additive context; the input is structured intake or OCR over a scanned invoice image (`--invoice-image`)._
 
 **Key property:** invoice content, IBANs, and payment history stay within the company-controlled device perimeter and never reach any cloud or third-party AI service. During a four-eyes review, only a minimal case bundle (IBAN masked) moves directly between the two reviewer devices over QVAC's peer-to-peer channel; outside that perimeter, only the verdict and the exported evidence bundle ever leave a review session.
 
@@ -136,13 +136,13 @@ With `--model <instruct-gguf>`, the same review runs against a real local model 
 
 ## Built with the QVAC SDK
 
-Inference, embedding-based retrieval, and delegated compute run through [`@qvac/sdk`](https://docs.qvac.tether.io); OCR is in development (see the status notes below). The primitives QuorumGate relies on:
+Inference, embedding-based retrieval, OCR, and delegated compute run through [`@qvac/sdk`](https://docs.qvac.tether.io). The primitives QuorumGate relies on:
 
 | Primitive | Role in QuorumGate |
 |---|---|
 | **LLM completion** | An instruct model (loaded as GGUF via the SDK) reasons over the assembled evidence and writes the explainable verdict memo. Tool-calling orchestration is a planned enhancement; the code-orchestrated path is the product. |
 | **Embeddings + RAG** | Optional additive grounding over the company's supplier records (`--embed-model`, validated on hardware); the deterministic lookup remains authoritative. |
-| **OCR** | Field extraction from scanned invoices (in development; structured intake is the current input path). |
+| **OCR** | Field extraction from a scanned invoice image (`--invoice-image`, validated on hardware) — a best-effort demo extractor; structured intake is also supported. |
 | **P2P delegated inference** (Holepunch stack) | The four-eyes second review across two devices, with automatic fallback to local inference. |
 
 QuorumGate runs its reasoning locally through the QVAC SDK using an open instruct model (loaded as a GGUF; the exact model and quantization are pinned during the build and recorded in the reproducibility notes). Everything that infers does so through `@qvac/sdk` — there is no cloud dependency anywhere in the review.
@@ -255,7 +255,7 @@ Built during the QVAC Hackathon I window (June 1–21, 2026).
 
 **In progress**
 
-- OCR over scanned invoices through the SDK (today: structured intake). Embedding-based RAG grounding is implemented (`--embed-model`); the deterministic lookup remains the authoritative grounding.
+- A best-effort OCR extractor (`--invoice-image`) and embedding RAG (`--embed-model`) are implemented; production-grade document parsing and richer retrieval remain future work. The deterministic intake and supplier lookup stay authoritative.
 - A graphical desk UI (today: the CLI).
 - The recorded demo video and the full cross-device evidence capture.
 
@@ -268,7 +268,7 @@ QuorumGate is a decision-support demonstration, not a certified financial contro
 - **Tamper-evidence yes, attribution not yet.** The bundle can be Ed25519-signed (`--sign`, checked with `scripts/verify-bundle.mjs`) so post-hoc edits are detectable; it also records provenance (code commit, model hash, thresholds). It is signed with a per-run device key, not a persistent authenticated identity — so it proves integrity, but not yet *who* signed. Per-key attribution (the peer signing its own second opinion, an authenticated reviewer signing the human decision) is the next step.
 - **The second reviewer is anchored, not fully independent.** Over P2P it re-reasons on the curated case bundle and the first reviewer's floor; it does not re-run the deterministic checks, so it cannot detect manipulation upstream of the bundle. Full independence would mean sending more data to the peer — a deliberate privacy tradeoff.
 - **No case lifecycle.** The desk is a stateless one-shot review; HOLD/ESCALATE have no persisted next state, retention, or access control.
-- **Document ingestion (OCR)** is in active development; today the input is structured intake. (Embedding-based RAG grounding is implemented and optional; the deterministic lookup remains authoritative.)
+- **OCR field extraction** is implemented (`--invoice-image`) but is a best-effort extractor tuned to a structured invoice layout, not a production document parser; structured intake is also supported. Embedding-based RAG grounding is implemented and optional; the deterministic lookup remains authoritative.
 
 ## Reproducibility and evidence
 

@@ -1,6 +1,6 @@
 // @ts-check
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, createDelegatedReviewer, createQvacEmbedder, SupplierMemory, AuditLog, suggestAction, DEFAULT_CONFIG, signEvidenceBundle, generateSigningKeypair } from '@quorumgate/qvac-pipeline';
+import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, createDelegatedReviewer, createQvacEmbedder, SupplierMemory, createQvacOcr, ocrBlocksToText, lowConfidenceBlocks, parseInvoiceFields, resolveSupplierId, AuditLog, suggestAction, DEFAULT_CONFIG, signEvidenceBundle, generateSigningKeypair } from '@quorumgate/qvac-pipeline';
 import { createStubModel } from './stub-model.js';
 import { gitHead, modelProvenance } from './provenance.js';
 
@@ -19,10 +19,26 @@ import { gitHead, modelProvenance } from './provenance.js';
  *
  * @param {{ requestPath: string, suppliersPath: string, outDir: string, modelSrc?: string, now?: string, decision?: string, reviewer?: string, peerKey?: string, peerModelSrc?: string, requirePeer?: boolean }} opts
  */
-export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, now, decision, reviewer, peerKey, peerModelSrc, requirePeer, embedModelSrc, sign }) {
+export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, now, decision, reviewer, peerKey, peerModelSrc, requirePeer, embedModelSrc, sign, invoiceImage, ocrModelSrc }) {
   const suppliersData = JSON.parse(readFileSync(suppliersPath, 'utf8'));
   const store = new SupplierStore(suppliersData);
-  const request = JSON.parse(readFileSync(requestPath, 'utf8'));
+
+  let request;
+  if (invoiceImage) {
+    // OCR the invoice image, parse the fields, and resolve the supplier — then review
+    // exactly as if the fields had been provided directly. The extracted fields are
+    // untrusted input; the deterministic checks treat them the same as any other.
+    const ocrModel = await createQvacOcr(ocrModelSrc ? { modelSrc: ocrModelSrc } : {});
+    const blocks = await ocrModel.extract(invoiceImage);
+    const fields = parseInvoiceFields(ocrBlocksToText(blocks));
+    request = {
+      ...fields,
+      supplierId: resolveSupplierId(fields.supplierName, suppliersData),
+      lowConfidence: lowConfidenceBlocks(blocks).map((b) => b.text),
+    };
+  } else {
+    request = JSON.parse(readFileSync(requestPath, 'utf8'));
+  }
 
   const auditLog = modelSrc || peerKey ? new AuditLog() : null;
   const model = modelSrc ? await createQvacModel({ modelSrc, auditLog }) : createStubModel();
@@ -141,9 +157,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const i = args.indexOf(name);
     return i >= 0 ? args[i + 1] : undefined;
   };
-  if (!requestPath) {
+  if (!requestPath && !flag('--invoice-image')) {
     console.error(
       'Usage: node packages/ui/src/desk-cli.js <request.json> [--suppliers <path>] [--model <gguf>] [--embed-model <embedding-gguf>] [--out <dir>] [--sign]\n' +
+        '       [--invoice-image <png> [--ocr-model <ocr-gguf>]]   (read fields from an invoice image via OCR)\n' +
         '       [--decide <APPROVE|HOLD|ESCALATE|BLOCK> --reviewer <name>]\n' +
         '       [--peer <provider-public-key> --peer-model <gguf-path-on-peer> [--require-peer]]   (four-eyes second review)',
     );
@@ -161,6 +178,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     requirePeer: args.includes('--require-peer'),
     embedModelSrc: flag('--embed-model'),
     sign: args.includes('--sign'),
+    invoiceImage: flag('--invoice-image'),
+    ocrModelSrc: flag('--ocr-model'),
   });
   console.log(formatReport(result));
   const written = [result.outputs.bundlePath, result.outputs.disclosurePath, result.outputs.auditPath].filter(Boolean);

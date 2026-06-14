@@ -9,12 +9,19 @@ import { resolve } from 'node:path';
  * with `{ text, bbox, confidence }`. The SDK is imported lazily. The model load and the
  * actual recognition are validated on the demo hardware before this is relied on.
  *
- * @param {{ modelSrc: string, langList?: string[] }} options
+ * `modelSrc` defaults to the SDK's bundled latin OCR recognizer (downloaded from the
+ * registry on first use); pass a local path to override it.
+ *
+ * @param {{ modelSrc?: string, langList?: string[] }} [options]
  * @returns {Promise<Ocr & { modelId: string }>}
  */
-export async function createQvacOcr({ modelSrc, langList = ['en'] }) {
-  const { loadModel, ocr } = await import('@qvac/sdk');
-  const modelId = await loadModel({ modelType: 'ocr', modelSrc: resolve(modelSrc), modelConfig: { langList } });
+export async function createQvacOcr({ modelSrc, langList = ['en'] } = {}) {
+  const { loadModel, ocr, OCR_LATIN_RECOGNIZER_1 } = await import('@qvac/sdk');
+  const modelId = await loadModel({
+    modelType: 'ocr',
+    modelSrc: modelSrc ? resolve(modelSrc) : OCR_LATIN_RECOGNIZER_1,
+    modelConfig: { langList },
+  });
   return {
     modelId,
     /**
