@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-14T11:03:59.151Z",
+  "provenance": {
+    "codeVersion": "897b8fadc89b99841ed57365fc88384862981285",
+    "config": {
+      "duplicateInvoice": {
+        "dateWindowDays": 5
+      },
+      "senderDomain": {
+        "lookalikeMaxDistance": 2
+      },
+      "urgency": {
+        "patterns": [
+          "urgent",
+          "pay today",
+          "immediately",
+          "as soon as possible",
+          "asap",
+          "wire today",
+          "right away",
+          "final notice",
+          "overdue",
+          "last chance"
+        ]
+      },
+      "invoicePoMismatch": {
+        "amountTolerance": 0.01
+      },
+      "abnormalAmount": {
+        "meanMultiple": 3
+      },
+      "insufficientEvidence": {
+        "maxSkipsForApprove": 3
+      }
+    },
+    "model": {
+      "basename": "2406a1f2e667e76a_llama_3.2_1b_intruct_tool_calling_v2.Q4_K.gguf",
+      "sizeBytes": 807691648,
+      "sha256": "406bd5983096cc49e1019e9c295e1b011d7b17ccae9e066266eb1734a4743bf7"
+    }
+  },
+  "supplier": {
+    "id": "acme-gmbh",
+    "name": "Acme GmbH"
+  },
+  "payment": {
+    "destinationIban": "••••••••••••••••••6819",
+    "amount": 30500,
+    "currency": "EUR",
+    "invoiceNumber": "INV-2026-052"
+  },
+  "checks": [
+    {
+      "checkId": "iban_change",
+      "status": "FAIL",
+      "severity": "high",
+      "evidence": {
+        "destinationIban": "••••••••••••••••••6819",
+        "verifiedIbanCount": 1,
+        "note": "Destination IBAN is not among the supplier's verified accounts."
+      }
+    },
+    {
+      "checkId": "duplicate_invoice",
+      "status": "PASS",
+      "severity": "medium",
+      "evidence": {}
+    },
+    {
+      "checkId": "sender_domain",
+      "status": "FAIL",
+      "severity": "high",
+      "evidence": {
+        "senderDomain": "acrne.com",
+        "nearestApprovedDomain": "acme.com",
+        "editDistance": 2,
+        "note": "Sender domain is a look-alike of an approved supplier domain."
+      }
+    },
+    {
+      "checkId": "urgency_language",
+      "status": "FAIL",
+      "severity": "low",
+      "evidence": {
+        "matchedPhrases": [
+          "urgent",
+          "wire today",
+          "final notice"
+        ],
+        "note": "Pressure / urgency language detected."
+      }
+    },
+    {
+      "checkId": "invoice_po_mismatch",
+      "status": "SKIP",
+      "severity": "medium",
+      "evidence": {
+        "note": "No purchase order linked to the request."
+      }
+    },
+    {
+      "checkId": "abnormal_amount",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": {
+        "amount": 30500,
+        "historicalMean": 9950,
+        "threshold": 29850,
+        "multiple": 3,
+        "note": "Amount exceeds the supplier's normal range."
+      }
+    },
+    {
+      "checkId": "missing_approval",
+      "status": "PASS",
+      "severity": "medium",
+      "evidence": {
+        "approvalRef": "PO-2026-042"
+      }
+    },
+    {
+      "checkId": "supplier_identity",
+      "status": "PASS",
+      "severity": "medium",
+      "evidence": {}
+    }
+  ],
+  "floor": {
+    "floor": "HOLD",
+    "approveForbidden": true,
+    "escalateEligible": true
+  },
+  "verdict": {
+    "modelProposed": "HOLD",
+    "final": "HOLD",
+    "memo": "Supplier: acme-gmbh\nAmount: 30500 EUR\nInvoice: INV-2026-052\n\nAllowed verdict floor (code-decided): HOLD — APPROVE is forbidden\n\nFailed checks:\n- iban_change: Destination IBAN is not among the supplier's verified accounts.\n- sender_domain: Sender domain is a look-alike of an approved supplier domain.\n- urgency_language: Pressure / urgency language detected.\n- abnormal_amount: Amount exceeds the supplier's normal range.",
+    "memoSource": "model-generated (not authoritative)"
+  },
+  "secondReview": {
+    "source": "peer",
+    "independent": true,
+    "obtained": true,
+    "reviewer": "second device (peer)",
+    "verdict": "HOLD",
+    "concur": true,
+    "memo": "Memo:\n \nThe supplier has provided an invoice amount of 30500 EUR. The invoice destination IBAN (masked) is ••••••••••••••••••6819. The invoice has a failed check for the destination IBAN being not among the supplier's verified accounts.\n \nThe invoice has a failed check for the sender domain being a look-alike of an approved supplier domain. There are also failed checks for the urgency language being detected, the amount being abnormal, and the amount exceeding the supplier's normal range."
+  },
+  "humanDecision": {
+    "decision": "BLOCK",
+    "reviewer": "Reviewer A",
+    "at": "2026-06-14T11:03:59.151Z"
+  },
+  "signature": {
+    "alg": "ed25519",
+    "publicKey": "MCowBQYDK2VwAyEAaTNTwHdUGx0pbod11OtO+I2+qfIPUN9exv+cweqtnG8=",
+    "signature": "3SLvgSnoYfWfsBUmopHY3W4I2z1Son+R8YARl7wnB/5WBOAloAwRAMNg/deohbwT5ZflyPD2yginUe10TwedAw=="
+  }
+}

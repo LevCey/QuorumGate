@@ -58,3 +58,12 @@ Only the minimal case bundle — masked IBAN, the fired checks with evidence, an
 floor; never raw documents, the message text, or the tax id. In the delegated-inference
 path the bundle travels to the peer as the model prompt over QVAC's P2P channel. All
 inference is local to the two devices; the remote-call disclosure is empty.
+
+## Re-validated with the full feature set (June 14, 2026)
+
+The two-laptop run was repeated after the desk gained signing, provenance, and the
+independent-second-review controls — Linux consumer ↔ Windows 11 provider, `--sign`
+enabled. The case delegated to the peer (`secondReview.source: "peer"`,
+`independent: true`, CONCUR — HOLD), and the exported bundle is Ed25519-signed and
+verifies (`scripts/verify-bundle.mjs` → VALID; editing any field → INVALID). The
+committed artifact is `evidence/sample-four-eyes-bundle.json`.
