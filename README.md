@@ -43,7 +43,7 @@ A payment request — invoice + supplier email + optional purchase order — is 
 
 For high-value or high-risk cases, QuorumGate delegates the case to a **second reviewer's device** over QVAC's peer-to-peer delegated inference. A second local model on that device produces its own opinion over the same minimal bundle — the **four-eyes principle** (segregation of duties) across two company-controlled devices. (The second reviewer reasons over the curated bundle and the first reviewer's floor; it does not re-run the deterministic checks — see [Project status](#project-status).) Reviewer A sends only a minimal bundle of the necessary review material — the fired risk checks, their evidence, and curated payment fields with the IBAN masked — over QVAC's peer-to-peer channel; no cloud service or third-party AI ever receives invoice content, full IBANs, or supplier history. If no peer is available, the review falls back to a local second opinion, so a verdict is always reached. On the delegated-inference path the bundle is carried over QVAC's P2P transport (HyperDHT), which encrypts every connection end to end with the Noise protocol (`@hyperswarm/secret-stream`); an additional application-layer sealed box (`packages/p2p-review/src/seal.js`, X25519 + AES-256-GCM) is implemented and unit-tested for deployments where the second device decrypts the bundle itself, and is not applied on the prompt path.
 
-This "second reviewer on a second device, fully offline" step maps a real compliance control — dual authorization — directly onto QVAC's most distinctive primitive, and is what separates QuorumGate from any single-machine document tool.
+This "second reviewer on a second device, fully local" step maps a real compliance control — dual authorization — directly onto QVAC's most distinctive primitive, and is what separates QuorumGate from any single-machine document tool.
 
 ## Why local AI / why QVAC
 
@@ -195,7 +195,7 @@ quorumgate/
 
 ```bash
 npm install     # or: npm ci  — installs the QVAC SDK and links the workspaces
-npm test        # 91 tests; the core package has zero dependencies
+npm test        # 112 tests; the core package has zero dependencies
 ```
 
 ### Review a payment — single device, fully offline
@@ -272,7 +272,7 @@ QuorumGate is a decision-support demonstration, not a certified financial contro
 
 ## Reproducibility and evidence
 
-- **Run it yourself:** `npm install && npm test` (91 tests), then the quickstart commands above — the offline path needs no model or network.
+- **Run it yourself:** `npm install && npm test` (112 tests), then the quickstart commands above — the offline path needs no model or network.
 - **Hardware + pinned model:** [`evidence/model-pin.md`](evidence/model-pin.md) records the demo hardware (CPU, RAM) and the measured load / TTFT / tokens-per-second for the pinned model.
 - **Four-eyes run:** [`evidence/four-eyes-run.md`](evidence/four-eyes-run.md) records a real delegated two-device second review and its timings.
 - **Audit log:** each `--model` run writes `evidence/audit-log.jsonl` — model loads and per-call inference performance (prompt size, tokens, TTFT, tokens/sec).
