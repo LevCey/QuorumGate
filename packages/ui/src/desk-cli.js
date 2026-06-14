@@ -57,6 +57,10 @@ export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, no
     ...(retrieval ? { retrieval } : {}),
   });
 
+  // Unload the model so the audit log records the model_unload event (R9.2) before the
+  // log is serialized below.
+  if ('unload' in model) await model.unload();
+
   mkdirSync(outDir, { recursive: true });
   /** @type {{ bundlePath: string, disclosurePath: string, auditPath?: string }} */
   const outputs = {

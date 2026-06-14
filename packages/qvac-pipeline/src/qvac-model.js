@@ -1,5 +1,5 @@
 // @ts-check
-import { basename } from 'node:path';
+import { basename, resolve } from 'node:path';
 /** @typedef {import('./model.js').ReasoningModel} ReasoningModel */
 /** @typedef {import('./model.js').CompletionRequest} CompletionRequest */
 /** @typedef {import('./model.js').CompletionResult} CompletionResult */
@@ -29,14 +29,16 @@ import { basename } from 'node:path';
  * so the caller's own fallback decides what happens (and the source stays honest).
  *
  * @param {{ modelSrc: string, modelType?: string, modelConfig?: Record<string, unknown>, auditLog?: AuditLog, delegate?: { providerPublicKey: string, fallbackToLocal?: boolean, timeout?: number } }} options
- * @returns {Promise<ReasoningModel & { modelId: string }>}
+ * @returns {Promise<ReasoningModel & { modelId: string, unload: () => Promise<void> }>}
  */
 export async function createQvacModel({ modelSrc, modelType = 'llm', modelConfig, auditLog, delegate }) {
-  const { loadModel, completion } = await import('@qvac/sdk');
+  const { loadModel, completion, unloadModel } = await import('@qvac/sdk');
   const loadStart = Date.now();
   const modelId = await loadModel({
     modelType,
-    modelSrc,
+    // Resolve a local path to absolute (the SDK loader requires it); for a delegated
+    // load, modelSrc is the peer's path and must be left as-is.
+    modelSrc: delegate ? modelSrc : resolve(modelSrc),
     ...(modelConfig ? { modelConfig } : {}),
     ...(delegate ? { delegate } : {}),
   });
@@ -56,23 +58,37 @@ export async function createQvacModel({ modelSrc, modelType = 'llm', modelConfig
       const start = process.hrtime.bigint();
       let firstTokenNs = null;
       let text = '';
-      let tokens = 0;
+      let streamChunks = 0;
       const result = await completion({ modelId, history, stream: true });
       for await (const chunk of result.tokenStream) {
         if (firstTokenNs === null) firstTokenNs = process.hrtime.bigint();
         text += typeof chunk === 'string' ? chunk : (chunk?.text ?? chunk?.token ?? '');
-        tokens += 1;
+        streamChunks += 1;
       }
-      const totalMs = Number(process.hrtime.bigint() - start) / 1e6;
+      const wallTotalMs = Number(process.hrtime.bigint() - start) / 1e6;
+      // Prefer the SDK's own measurements (real token counts, TTFT, tokens/sec); our
+      // numbers are a wall-clock time and a stream-chunk count, recorded as exactly that
+      // (a stream chunk is not necessarily one token).
+      let sdkStats = null;
+      try {
+        sdkStats = await result.stats;
+      } catch {
+        /* stats unavailable */
+      }
       auditLog?.completion({
         modelId: String(modelId),
         promptChars: request.prompt.length,
-        tokens,
-        ttftMs: firstTokenNs ? +(Number(firstTokenNs - start) / 1e6).toFixed(1) : null,
-        totalMs: +totalMs.toFixed(1),
-        tokensPerSec: tokens > 1 ? +(tokens / (totalMs / 1000)).toFixed(1) : null,
+        streamChunks,
+        wallTtftMs: firstTokenNs ? +(Number(firstTokenNs - start) / 1e6).toFixed(1) : null,
+        wallTotalMs: +wallTotalMs.toFixed(1),
+        sdkStats: sdkStats ?? null,
       });
       return { text };
+    },
+    /** Unload the model from the SDK and record it (R9.2 model loads/unloads). */
+    async unload() {
+      await unloadModel({ modelId });
+      auditLog?.modelUnload({ modelId: String(modelId), model: basename(String(modelSrc)) });
     },
   };
 }

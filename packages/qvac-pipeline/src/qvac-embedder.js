@@ -1,4 +1,5 @@
 // @ts-check
+import { resolve } from 'node:path';
 /** @typedef {import('./embedder.js').Embedder} Embedder */
 
 /**
@@ -16,7 +17,8 @@
  */
 export async function createQvacEmbedder({ modelSrc, modelType = 'llamacpp-embedding' }) {
   const { loadModel, embed } = await import('@qvac/sdk');
-  const modelId = await loadModel({ modelType, modelSrc });
+  // The SDK's embedding loader requires an absolute path; resolve a relative one.
+  const modelId = await loadModel({ modelType, modelSrc: resolve(modelSrc) });
   return {
     /**
      * @param {string[]} texts
