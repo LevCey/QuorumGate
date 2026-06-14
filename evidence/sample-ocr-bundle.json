@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-06-14T12:14:55.123Z",
+  "generatedAt": "2026-06-14T18:28:09.067Z",
   "provenance": {
-    "codeVersion": "0213659a7c4bfe146edf8b1c5cf1c07c1b55f815",
+    "codeVersion": "c2a47d2afb03d426bf558f535b64c1f33df0b233",
     "config": {
       "duplicateInvoice": {
         "dateWindowDays": 5
@@ -111,10 +111,10 @@
     },
     {
       "checkId": "missing_approval",
-      "status": "FAIL",
+      "status": "PASS",
       "severity": "medium",
       "evidence": {
-        "note": "No authorization reference attached to the payment."
+        "approvalRef": "PO-2026-042"
       }
     },
     {
@@ -132,9 +132,18 @@
   "verdict": {
     "modelProposed": "HOLD",
     "final": "HOLD",
-    "memo": "Offline stub: verdict HOLD follows the code-decided floor. Findings: [high] iban_change: Destination IBAN is not among the supplier's verified accounts.; [high] sender_domain: Sender domain is a look-alike of an approved supplier domain.; [low] urgency_language: Pressure / urgency language detected.; [medium] abnormal_amount: Amount exceeds the supplier's normal range.; [medium] missing_approval: No authorization reference attached to the payment..",
+    "memo": "Offline stub: verdict HOLD follows the code-decided floor. Findings: [high] iban_change: Destination IBAN is not among the supplier's verified accounts.; [high] sender_domain: Sender domain is a look-alike of an approved supplier domain.; [low] urgency_language: Pressure / urgency language detected.; [medium] abnormal_amount: Amount exceeds the supplier's normal range..",
     "memoSource": "model-generated (not authoritative)"
   },
   "secondReview": null,
-  "humanDecision": null
+  "humanDecision": {
+    "decision": "BLOCK",
+    "reviewer": "Reviewer A",
+    "at": "2026-06-14T18:28:09.067Z"
+  },
+  "signature": {
+    "alg": "ed25519",
+    "publicKey": "MCowBQYDK2VwAyEAziG7WJIsq5F04gWeVwf362+nIg3Nvm9W2yzBUV2a5Ss=",
+    "signature": "1VY8Ha+IngVtxIVwGI+NDxYKJXB17WO/BauUDIQHIJigNzDoTcxDp8ChERsxfUv1Ckojeh0z0aCYmc4pBItnCg=="
+  }
 }

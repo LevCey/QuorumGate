@@ -50,12 +50,13 @@ Raw artifacts committed: `evidence/sample-evidence-bundle.json`,
 ## OCR pipeline validation (June 14, 2026)
 
 Separately, the `--invoice-image` path was run on the demo hardware against the synthetic
-invoice image (`examples/sample-data/invoice-bec-trap.png`): the QVAC latin OCR recognizer
-(`OCR_LATIN_RECOGNIZER_1`, downloaded from the registry) detected nine text blocks with
-per-block confidence (e.g. the IBAN block at 0.83), the extractor parsed them into fields
-(IBAN, amount 30,500 EUR, invoice number, supplier name), the supplier resolved to
-`acme-gmbh`, and the desk held the payment — five signals, with the changed IBAN and the
-look-alike domain read straight from the image. Committed artifact:
+invoice image (`examples/sample-data/invoice-bec-trap.png`, a realistic Acme GmbH
+letterhead): the QVAC latin OCR recognizer (`OCR_LATIN_RECOGNIZER_1`, downloaded from the
+registry) detected 29 text blocks, each with a per-block confidence; the extractor parsed
+them into fields (IBAN, amount 30,500 EUR, invoice number, supplier name, and the
+PO/approval reference), the supplier resolved to `acme-gmbh`, and the desk held the payment
+on four signals — the changed IBAN, the look-alike sender domain, an abnormal amount, and
+urgency — all read straight from the image. Committed artifact:
 `evidence/sample-ocr-bundle.json`.
 
 Notes:
