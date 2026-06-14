@@ -17,9 +17,9 @@ import { gitHead, modelProvenance } from './provenance.js';
  * returns an independent opinion. If the peer is unreachable the desk falls back to a
  * local second opinion, so a verdict is always reached.
  *
- * @param {{ requestPath: string, suppliersPath: string, outDir: string, modelSrc?: string, now?: string, decision?: string, reviewer?: string, peerKey?: string, peerModelSrc?: string }} opts
+ * @param {{ requestPath: string, suppliersPath: string, outDir: string, modelSrc?: string, now?: string, decision?: string, reviewer?: string, peerKey?: string, peerModelSrc?: string, requirePeer?: boolean }} opts
  */
-export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, now, decision, reviewer, peerKey, peerModelSrc }) {
+export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, now, decision, reviewer, peerKey, peerModelSrc, requirePeer }) {
   const store = new SupplierStore(JSON.parse(readFileSync(suppliersPath, 'utf8')));
   const request = JSON.parse(readFileSync(requestPath, 'utf8'));
 
@@ -33,7 +33,7 @@ export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, no
       throw new Error('Four-eyes (--peer) needs the peer model path: pass --peer-model <gguf-path-on-the-peer-device> (or --model).');
     }
     const transport = createDelegatedReviewer({ providerPublicKey: peerKey, modelSrc: peerSrc, auditLog });
-    fourEyes = { transport, localModel: model };
+    fourEyes = { transport, localModel: model, requirePeer: !!requirePeer };
   }
 
   const provenance = {
@@ -103,8 +103,15 @@ export function formatReport(result) {
   if (action) lines.push('', 'Suggested action:', `  ${action}`);
 
   const sr = bundle.secondReview;
-  if (sr) {
-    lines.push('', `Second reviewer (${sr.reviewer}): ${sr.verdict} — ${sr.concur ? 'CONCUR' : 'DIFFERS'}`);
+  if (sr && sr.obtained === false) {
+    lines.push(
+      '',
+      '!! INDEPENDENT SECOND REVIEW NOT OBTAINED — peer required but unavailable.',
+      '   Recommendation held pending an independent review; human acknowledgement required.',
+    );
+  } else if (sr) {
+    const indep = sr.independent === false ? ' [local fallback — not independent]' : '';
+    lines.push('', `Second reviewer (${sr.reviewer}): ${sr.verdict} — ${sr.concur ? 'CONCUR' : 'DIFFERS'}${indep}`);
     if (sr.memo) lines.push(`  ${sr.memo}`);
   }
 
@@ -125,7 +132,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.error(
       'Usage: node packages/ui/src/desk-cli.js <request.json> [--suppliers <path>] [--model <gguf>] [--out <dir>]\n' +
         '       [--decide <APPROVE|HOLD|ESCALATE|BLOCK> --reviewer <name>]\n' +
-        '       [--peer <provider-public-key> --peer-model <gguf-path-on-peer>]   (four-eyes second review)',
+        '       [--peer <provider-public-key> --peer-model <gguf-path-on-peer> [--require-peer]]   (four-eyes second review)',
     );
     process.exit(2);
   }
@@ -138,6 +145,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     reviewer: flag('--reviewer'),
     peerKey: flag('--peer'),
     peerModelSrc: flag('--peer-model'),
+    requirePeer: args.includes('--require-peer'),
   });
   console.log(formatReport(result));
   const written = [result.outputs.bundlePath, result.outputs.disclosurePath, result.outputs.auditPath].filter(Boolean);

@@ -63,11 +63,11 @@ export function makeHumanDecision(decision, reviewer, at) {
  * @param {Record<string, unknown>} rawInput
  * @param {SupplierStore} store
  * @param {ReasoningModel} model
- * @param {{ config?: CheckConfig, now?: string, humanDecision?: { decision: string, reviewer: string }, fourEyes?: { transport?: DelegateTransport | null, localModel?: ReasoningModel, config?: DelegationConfig }, provenance?: unknown }} [options]
+ * @param {{ config?: CheckConfig, now?: string, humanDecision?: { decision: string, reviewer: string }, fourEyes?: { transport?: DelegateTransport | null, localModel?: ReasoningModel, config?: DelegationConfig, requirePeer?: boolean }, provenance?: unknown }} [options]
  * @returns {Promise<{
  *   intake: ReturnType<typeof normalizeRequest>,
  *   review: ReviewResult,
- *   secondReview: { source: string, reviewer: string, verdict: string, concur: boolean, memo: string | null } | null,
+ *   secondReview: Record<string, unknown> | null,
  *   recommendation: import('../../core/src/types.js').Verdict,
  *   bundle: EvidenceBundle,
  *   knownSupplier: boolean,
@@ -101,14 +101,32 @@ export async function runDeskReview(rawInput, store, model, options = {}) {
         return { verdict: r.verdict, memo: r.memo };
       },
     );
-    recommendation = clampVerdict(moreConservative(review.verdict, opinion.verdict), review.floor);
-    secondReview = {
-      source,
-      reviewer: source === 'peer' ? 'second device (peer)' : 'local fallback',
-      verdict: opinion.verdict,
-      concur: opinion.verdict === review.verdict,
-      memo: opinion.memo ?? null,
-    };
+    const independent = source === 'peer';
+    if (options.fourEyes.requirePeer && !independent) {
+      // An independent second review was required but the peer was unreachable. Do not
+      // pass the local self-review off as independent, and do not yield an approved-
+      // looking outcome — hold pending a real second review (segregation of duties).
+      recommendation = clampVerdict(moreConservative(review.verdict, 'HOLD'), review.floor);
+      secondReview = {
+        source,
+        independent: false,
+        obtained: false,
+        reviewer: 'none (independent peer review required, peer unavailable)',
+        verdict: null,
+        memo: 'Independent second review was required but could not be obtained; the local fallback is not counted as an independent opinion.',
+      };
+    } else {
+      recommendation = clampVerdict(moreConservative(review.verdict, opinion.verdict), review.floor);
+      secondReview = {
+        source,
+        independent,
+        obtained: true,
+        reviewer: source === 'peer' ? 'second device (peer)' : 'local fallback',
+        verdict: opinion.verdict,
+        concur: opinion.verdict === review.verdict,
+        memo: opinion.memo ?? null,
+      };
+    }
   }
 
   const humanDecision = options.humanDecision

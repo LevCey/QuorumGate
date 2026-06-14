@@ -56,3 +56,25 @@ test('four-eyes: a low-value, low-risk case is not delegated', async () => {
   assert.equal(res.recommendation, 'APPROVE');
   assert.equal(res.bundle.secondReview, null);
 });
+
+const throwingPeer = { requestReview: async () => { throw new Error('no peer reachable'); } };
+
+test('four-eyes: a local fallback is recorded but marked not independent', async () => {
+  const res = await runDeskReview(readJson('request-bec-trap.json'), store, approves, {
+    fourEyes: { transport: throwingPeer, localModel: approves },
+  });
+  assert.equal(res.secondReview.source, 'local');
+  assert.equal(res.secondReview.obtained, true);
+  assert.equal(res.secondReview.independent, false);
+});
+
+test('four-eyes: --require-peer refuses to count a local fallback as an independent review', async () => {
+  // The clean request is high-value (>= 10000) so it delegates; its floor is APPROVE.
+  const res = await runDeskReview(readJson('request-clean.json'), store, approves, {
+    fourEyes: { transport: throwingPeer, localModel: approves, requirePeer: true },
+  });
+  assert.equal(res.secondReview.obtained, false);
+  assert.equal(res.secondReview.independent, false);
+  assert.equal(res.secondReview.verdict, null);
+  assert.equal(res.recommendation, 'HOLD'); // not APPROVE — no independent review was obtained
+});
