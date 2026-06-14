@@ -5,6 +5,8 @@ export { normalizeRequest } from './intake.js';
 export { SupplierStore } from './supplier-store.js';
 export { createQvacModel } from './qvac-model.js';
 export { createQvacEmbedder } from './qvac-embedder.js';
+export { createQvacOcr } from './qvac-ocr.js';
+export { ocrBlocksToText, lowConfidenceBlocks } from './ocr.js';
 export { buildEvidenceBundle, remoteCallDisclosure } from './evidence.js';
 export { runDeskReview } from './desk.js';
 export { reviewBundle } from './review-bundle.js';
