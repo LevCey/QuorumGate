@@ -32,4 +32,7 @@ export const DEFAULT_CONFIG = {
   invoicePoMismatch: { amountTolerance: 0.01 },
   // An amount above this multiple of the supplier's historical mean is abnormal.
   abnormalAmount: { meanMultiple: 3 },
+  // Forbid APPROVE when more than this many checks could not be evaluated (a sparse
+  // supplier record): "couldn't evaluate" is treated as risk, not as a pass.
+  insufficientEvidence: { maxSkipsForApprove: 3 },
 };

@@ -14,6 +14,7 @@ const VERDICT_RANK = { APPROVE: 0, HOLD: 1, ESCALATE: 2 };
  * @property {Verdict} floor             Minimum verdict the reviewer may issue.
  * @property {boolean} approveForbidden  True when APPROVE is not permitted.
  * @property {boolean} escalateEligible  True when the case may be escalated to four-eyes.
+ * @property {boolean} [insufficientEvidence]  True when APPROVE was forbidden because too many checks could not be evaluated.
  */
 
 /**
@@ -25,9 +26,10 @@ const VERDICT_RANK = { APPROVE: 0, HOLD: 1, ESCALATE: 2 };
  * model may tighten this floor, never loosen it.
  *
  * @param {CheckResult[]} results
+ * @param {{ insufficientEvidence?: { maxSkipsForApprove?: number } }} [config]
  * @returns {VerdictFloor}
  */
-export function computeVerdictFloor(results) {
+export function computeVerdictFloor(results, config = {}) {
   const fails = results.filter((r) => r.status === 'FAIL');
   const highFails = fails.filter((r) => r.severity === 'high');
   const mediumFails = fails.filter((r) => r.severity === 'medium');
@@ -37,6 +39,14 @@ export function computeVerdictFloor(results) {
   }
   if (mediumFails.length > 0) {
     return { floor: 'HOLD', approveForbidden: true, escalateEligible: mediumFails.length >= 2 };
+  }
+  // Insufficient evidence: when too many checks could not be evaluated (a sparse
+  // supplier record), "couldn't evaluate" is treated as risk, not as a pass — APPROVE
+  // is forbidden so a low-signal verdict does not rest on checks that never ran.
+  const maxSkips = config.insufficientEvidence?.maxSkipsForApprove ?? 3;
+  const skipped = results.filter((r) => r.status === 'SKIP').length;
+  if (skipped > maxSkips) {
+    return { floor: 'HOLD', approveForbidden: true, escalateEligible: false, insufficientEvidence: true };
   }
   // Only low-severity (advisory) signals, or none: approval remains permitted. The
   // model may still choose to HOLD on the strength of advisory signals.

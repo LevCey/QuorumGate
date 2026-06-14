@@ -37,5 +37,5 @@ export function runChecks(request, history, config = DEFAULT_CONFIG) {
     checkMissingApproval(request, history),
     checkSupplierIdentity(request, history),
   ];
-  return { results, floor: computeVerdictFloor(results) };
+  return { results, floor: computeVerdictFloor(results, config) };
 }
