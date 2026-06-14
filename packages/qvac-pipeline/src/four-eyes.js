@@ -18,10 +18,19 @@ import { reviewBundle } from './review-bundle.js';
  * runs and the recorded source ('peer' vs 'local') stays truthful. A new delegated
  * model is created per request so a transient peer failure surfaces as a throw.
  *
- * @param {{ providerPublicKey: string, modelSrc: string, modelType?: string, timeout?: number, auditLog?: AuditLog }} opts
+ * `contextSize` (`ctx_size`) and `maxPredict` (`predict`) bound the peer model so it
+ * returns an opinion instead of running away. The second-reviewer prompt plus a memo
+ * must fit the context, and the generation must stop: a small model that never emits a
+ * stop token keeps generating until it either overflows the context
+ * (`processPromptImpl: context overflow`) or fills it (a multi-minute hang). `ctx_size`
+ * gives the prompt and memo room; `predict` caps generated tokens so an
+ * instruction-ignoring model is still bounded. The verdict is clamped to the floor
+ * regardless, so a truncated or malformed memo degrades safely to the floor.
+ *
+ * @param {{ providerPublicKey: string, modelSrc: string, modelType?: string, timeout?: number, contextSize?: number, maxPredict?: number, auditLog?: AuditLog }} opts
  * @returns {DelegateTransport}
  */
-export function createDelegatedReviewer({ providerPublicKey, modelSrc, modelType = 'llm', timeout = 60_000, auditLog }) {
+export function createDelegatedReviewer({ providerPublicKey, modelSrc, modelType = 'llm', timeout = 180_000, contextSize = 4096, maxPredict = 1024, auditLog }) {
   return {
     /**
      * @param {CaseBundle} bundle
@@ -31,6 +40,7 @@ export function createDelegatedReviewer({ providerPublicKey, modelSrc, modelType
       const model = await createQvacModel({
         modelSrc,
         modelType,
+        modelConfig: { ctx_size: contextSize, predict: maxPredict },
         auditLog,
         delegate: { providerPublicKey, fallbackToLocal: false, timeout },
       });
