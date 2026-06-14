@@ -47,6 +47,17 @@ One run exercised everything end to end on the demo hardware:
 Raw artifacts committed: `evidence/sample-evidence-bundle.json`,
 `evidence/sample-audit-log.jsonl`, `evidence/sample-remote-call-disclosure.json`.
 
+## OCR pipeline validation (June 14, 2026)
+
+Separately, the `--invoice-image` path was run on the demo hardware against the synthetic
+invoice image (`examples/sample-data/invoice-bec-trap.png`): the QVAC latin OCR recognizer
+(`OCR_LATIN_RECOGNIZER_1`, downloaded from the registry) detected nine text blocks with
+per-block confidence (e.g. the IBAN block at 0.83), the extractor parsed them into fields
+(IBAN, amount 30,500 EUR, invoice number, supplier name), the supplier resolved to
+`acme-gmbh`, and the desk held the payment — five signals, with the changed IBAN and the
+look-alike domain read straight from the image. Committed artifact:
+`evidence/sample-ocr-bundle.json`.
+
 Notes:
 
 - In an earlier run the 4B model **proposed ESCALATE above the HOLD floor** — the model

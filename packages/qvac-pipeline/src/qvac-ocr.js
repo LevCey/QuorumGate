@@ -4,10 +4,12 @@ import { resolve } from 'node:path';
 
 /**
  * Build an {@link Ocr} backed by the QVAC SDK `ocr`. The call shape is verified against
- * the `@qvac/sdk` types: an OCR model is loaded with `modelType: 'ocr'` (and a language
- * list), and `ocr({ modelId, image })` returns `{ blocks }` resolving to text blocks
- * with `{ text, bbox, confidence }`. The SDK is imported lazily. The model load and the
- * actual recognition are validated on the demo hardware before this is relied on.
+ * the exported `@qvac/sdk` client types (`client/api/ocr.d.ts`): an OCR model is loaded
+ * with `modelType: 'ocr'` (and a language list), and `ocr({ modelId, image })` returns
+ * `{ blocks, blockStream, stats }` where `blocks` is a *promise* of the detected text
+ * blocks (`{ text, bbox, confidence }`), which we await. (The async-iterable streaming
+ * variant is the separate `blockStream`.) The SDK is imported lazily; the model load and
+ * recognition are validated on the demo hardware (see `evidence/model-pin.md`).
  *
  * `modelSrc` defaults to the SDK's bundled latin OCR recognizer (downloaded from the
  * registry on first use); pass a local path to override it.

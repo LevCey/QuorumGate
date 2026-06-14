@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-14T12:14:55.123Z",
+  "provenance": {
+    "codeVersion": "0213659a7c4bfe146edf8b1c5cf1c07c1b55f815",
+    "config": {
+      "duplicateInvoice": {
+        "dateWindowDays": 5
+      },
+      "senderDomain": {
+        "lookalikeMaxDistance": 2
+      },
+      "urgency": {
+        "patterns": [
+          "urgent",
+          "pay today",
+          "immediately",
+          "as soon as possible",
+          "asap",
+          "wire today",
+          "right away",
+          "final notice",
+          "overdue",
+          "last chance"
+        ]
+      },
+      "invoicePoMismatch": {
+        "amountTolerance": 0.01
+      },
+      "abnormalAmount": {
+        "meanMultiple": 3
+      },
+      "insufficientEvidence": {
+        "maxSkipsForApprove": 3
+      }
+    },
+    "model": {
+      "type": "offline-stub"
+    }
+  },
+  "supplier": {
+    "id": "acme-gmbh",
+    "name": "Acme GmbH"
+  },
+  "payment": {
+    "destinationIban": "••••••••••••••••••6819",
+    "amount": 30500,
+    "currency": "EUR",
+    "invoiceNumber": "INV-2026-052"
+  },
+  "checks": [
+    {
+      "checkId": "iban_change",
+      "status": "FAIL",
+      "severity": "high",
+      "evidence": {
+        "destinationIban": "••••••••••••••••••6819",
+        "verifiedIbanCount": 1,
+        "note": "Destination IBAN is not among the supplier's verified accounts."
+      }
+    },
+    {
+      "checkId": "duplicate_invoice",
+      "status": "PASS",
+      "severity": "medium",
+      "evidence": {}
+    },
+    {
+      "checkId": "sender_domain",
+      "status": "FAIL",
+      "severity": "high",
+      "evidence": {
+        "senderDomain": "acrne.com",
+        "nearestApprovedDomain": "acme.com",
+        "editDistance": 2,
+        "note": "Sender domain is a look-alike of an approved supplier domain."
+      }
+    },
+    {
+      "checkId": "urgency_language",
+      "status": "FAIL",
+      "severity": "low",
+      "evidence": {
+        "matchedPhrases": [
+          "urgent",
+          "wire today",
+          "final notice"
+        ],
+        "note": "Pressure / urgency language detected."
+      }
+    },
+    {
+      "checkId": "invoice_po_mismatch",
+      "status": "SKIP",
+      "severity": "medium",
+      "evidence": {
+        "note": "No purchase order linked to the request."
+      }
+    },
+    {
+      "checkId": "abnormal_amount",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": {
+        "amount": 30500,
+        "historicalMean": 9950,
+        "threshold": 29850,
+        "multiple": 3,
+        "note": "Amount exceeds the supplier's normal range."
+      }
+    },
+    {
+      "checkId": "missing_approval",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": {
+        "note": "No authorization reference attached to the payment."
+      }
+    },
+    {
+      "checkId": "supplier_identity",
+      "status": "PASS",
+      "severity": "medium",
+      "evidence": {}
+    }
+  ],
+  "floor": {
+    "floor": "HOLD",
+    "approveForbidden": true,
+    "escalateEligible": true
+  },
+  "verdict": {
+    "modelProposed": "HOLD",
+    "final": "HOLD",
+    "memo": "Offline stub: verdict HOLD follows the code-decided floor. Findings: [high] iban_change: Destination IBAN is not among the supplier's verified accounts.; [high] sender_domain: Sender domain is a look-alike of an approved supplier domain.; [low] urgency_language: Pressure / urgency language detected.; [medium] abnormal_amount: Amount exceeds the supplier's normal range.; [medium] missing_approval: No authorization reference attached to the payment..",
+    "memoSource": "model-generated (not authoritative)"
+  },
+  "secondReview": null,
+  "humanDecision": null
+}
