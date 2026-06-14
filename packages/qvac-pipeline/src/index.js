@@ -7,6 +7,7 @@ export { createQvacModel } from './qvac-model.js';
 export { buildEvidenceBundle, remoteCallDisclosure } from './evidence.js';
 export { runDeskReview } from './desk.js';
 export { reviewBundle } from './review-bundle.js';
+export { SupplierMemory, supplierNote, cosineSimilarity } from './supplier-memory.js';
 export { createDelegatedReviewer } from './four-eyes.js';
 export { AuditLog } from './audit-log.js';
 export { suggestAction, DEFAULT_CONFIG } from '@quorumgate/core';
