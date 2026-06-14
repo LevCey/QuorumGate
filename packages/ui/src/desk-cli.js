@@ -1,6 +1,6 @@
 // @ts-check
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, createDelegatedReviewer, createQvacEmbedder, SupplierMemory, AuditLog, suggestAction, DEFAULT_CONFIG } from '@quorumgate/qvac-pipeline';
+import { runDeskReview, SupplierStore, remoteCallDisclosure, createQvacModel, createDelegatedReviewer, createQvacEmbedder, SupplierMemory, AuditLog, suggestAction, DEFAULT_CONFIG, signEvidenceBundle, generateSigningKeypair } from '@quorumgate/qvac-pipeline';
 import { createStubModel } from './stub-model.js';
 import { gitHead, modelProvenance } from './provenance.js';
 
@@ -19,7 +19,7 @@ import { gitHead, modelProvenance } from './provenance.js';
  *
  * @param {{ requestPath: string, suppliersPath: string, outDir: string, modelSrc?: string, now?: string, decision?: string, reviewer?: string, peerKey?: string, peerModelSrc?: string, requirePeer?: boolean }} opts
  */
-export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, now, decision, reviewer, peerKey, peerModelSrc, requirePeer, embedModelSrc }) {
+export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, now, decision, reviewer, peerKey, peerModelSrc, requirePeer, embedModelSrc, sign }) {
   const suppliersData = JSON.parse(readFileSync(suppliersPath, 'utf8'));
   const store = new SupplierStore(suppliersData);
   const request = JSON.parse(readFileSync(requestPath, 'utf8'));
@@ -63,14 +63,15 @@ export async function runDesk({ requestPath, suppliersPath, outDir, modelSrc, no
     bundlePath: `${outDir}/evidence-bundle.json`,
     disclosurePath: `${outDir}/remote-call-disclosure.json`,
   };
-  writeFileSync(outputs.bundlePath, `${JSON.stringify(result.bundle, null, 2)}\n`);
+  const exportedBundle = sign ? signEvidenceBundle(result.bundle, generateSigningKeypair()) : result.bundle;
+  writeFileSync(outputs.bundlePath, `${JSON.stringify(exportedBundle, null, 2)}\n`);
   writeFileSync(outputs.disclosurePath, `${JSON.stringify(remoteCallDisclosure(), null, 2)}\n`);
   if (auditLog) {
     outputs.auditPath = `${outDir}/audit-log.jsonl`;
     writeFileSync(outputs.auditPath, auditLog.toJSONL());
   }
 
-  return { ...result, outputs, usedModel: modelSrc ? 'qvac' : 'stub' };
+  return { ...result, outputs, usedModel: modelSrc ? 'qvac' : 'stub', signed: !!sign };
 }
 
 /**
@@ -138,7 +139,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   };
   if (!requestPath) {
     console.error(
-      'Usage: node packages/ui/src/desk-cli.js <request.json> [--suppliers <path>] [--model <gguf>] [--embed-model <embedding-gguf>] [--out <dir>]\n' +
+      'Usage: node packages/ui/src/desk-cli.js <request.json> [--suppliers <path>] [--model <gguf>] [--embed-model <embedding-gguf>] [--out <dir>] [--sign]\n' +
         '       [--decide <APPROVE|HOLD|ESCALATE|BLOCK> --reviewer <name>]\n' +
         '       [--peer <provider-public-key> --peer-model <gguf-path-on-peer> [--require-peer]]   (four-eyes second review)',
     );
@@ -155,10 +156,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     peerModelSrc: flag('--peer-model'),
     requirePeer: args.includes('--require-peer'),
     embedModelSrc: flag('--embed-model'),
+    sign: args.includes('--sign'),
   });
   console.log(formatReport(result));
   const written = [result.outputs.bundlePath, result.outputs.disclosurePath, result.outputs.auditPath].filter(Boolean);
   console.log(`\nEvidence written: ${written.join(', ')}`);
+  if (result.signed) {
+    console.log(`Bundle signed (tamper-evident) — verify with: node scripts/verify-bundle.mjs ${result.outputs.bundlePath}`);
+  }
   // The SDK's inference worker keeps the event loop alive after the review; all
   // outputs are written synchronously above, so exit explicitly.
   process.exit(0);

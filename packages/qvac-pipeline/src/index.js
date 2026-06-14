@@ -12,4 +12,5 @@ export { SupplierMemory, supplierNote, cosineSimilarity } from './supplier-memor
 export { createDelegatedReviewer } from './four-eyes.js';
 export { AuditLog } from './audit-log.js';
 export { signEvidenceBundle, verifyEvidenceBundle } from './sign-bundle.js';
+export { generateSigningKeypair } from '@quorumgate/p2p-review';
 export { suggestAction, DEFAULT_CONFIG } from '@quorumgate/core';
