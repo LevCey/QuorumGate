@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-14T10:42:52.587Z",
+  "provenance": {
+    "codeVersion": "a74b655e66e712965f1ed526f463858db39eb5e4",
+    "config": {
+      "duplicateInvoice": {
+        "dateWindowDays": 5
+      },
+      "senderDomain": {
+        "lookalikeMaxDistance": 2
+      },
+      "urgency": {
+        "patterns": [
+          "urgent",
+          "pay today",
+          "immediately",
+          "as soon as possible",
+          "asap",
+          "wire today",
+          "right away",
+          "final notice",
+          "overdue",
+          "last chance"
+        ]
+      },
+      "invoicePoMismatch": {
+        "amountTolerance": 0.01
+      },
+      "abnormalAmount": {
+        "meanMultiple": 3
+      },
+      "insufficientEvidence": {
+        "maxSkipsForApprove": 3
+      }
+    },
+    "model": {
+      "basename": "Qwen3-4B-Q4_K_M.gguf",
+      "sizeBytes": 2497280256,
+      "sha256": "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5"
+    }
+  },
+  "supplier": {
+    "id": "acme-gmbh",
+    "name": "Acme GmbH"
+  },
+  "payment": {
+    "destinationIban": "••••••••••••••••••6819",
+    "amount": 30500,
+    "currency": "EUR",
+    "invoiceNumber": "INV-2026-052"
+  },
+  "checks": [
+    {
+      "checkId": "iban_change",
+      "status": "FAIL",
+      "severity": "high",
+      "evidence": {
+        "destinationIban": "••••••••••••••••••6819",
+        "verifiedIbanCount": 1,
+        "note": "Destination IBAN is not among the supplier's verified accounts."
+      }
+    },
+    {
+      "checkId": "duplicate_invoice",
+      "status": "PASS",
+      "severity": "medium",
+      "evidence": {}
+    },
+    {
+      "checkId": "sender_domain",
+      "status": "FAIL",
+      "severity": "high",
+      "evidence": {
+        "senderDomain": "acrne.com",
+        "nearestApprovedDomain": "acme.com",
+        "editDistance": 2,
+        "note": "Sender domain is a look-alike of an approved supplier domain."
+      }
+    },
+    {
+      "checkId": "urgency_language",
+      "status": "FAIL",
+      "severity": "low",
+      "evidence": {
+        "matchedPhrases": [
+          "urgent",
+          "wire today",
+          "final notice"
+        ],
+        "note": "Pressure / urgency language detected."
+      }
+    },
+    {
+      "checkId": "invoice_po_mismatch",
+      "status": "SKIP",
+      "severity": "medium",
+      "evidence": {
+        "note": "No purchase order linked to the request."
+      }
+    },
+    {
+      "checkId": "abnormal_amount",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": {
+        "amount": 30500,
+        "historicalMean": 9950,
+        "threshold": 29850,
+        "multiple": 3,
+        "note": "Amount exceeds the supplier's normal range."
+      }
+    },
+    {
+      "checkId": "missing_approval",
+      "status": "PASS",
+      "severity": "medium",
+      "evidence": {
+        "approvalRef": "PO-2026-042"
+      }
+    },
+    {
+      "checkId": "supplier_identity",
+      "status": "PASS",
+      "severity": "medium",
+      "evidence": {}
+    }
+  ],
+  "floor": {
+    "floor": "HOLD",
+    "approveForbidden": true,
+    "escalateEligible": true
+  },
+  "verdict": {
+    "modelProposed": "HOLD",
+    "final": "HOLD",
+    "memo": "The payment for Supplier acme-gmbh (INV-2026-052) was flagged for HOLD due to two high-severity risks: 1) the destination IBAN is not among the supplier's verified accounts, and 2) the sender domain matches a look-alike of an approved supplier domain. While the amount (30,500 EUR) exceeds the supplier's typical range (9,500–10,500 EUR), the high-severity checks override the code's floor. The payment should not be approved due to these critical risks.",
+    "memoSource": "model-generated (not authoritative)"
+  },
+  "secondReview": null,
+  "humanDecision": {
+    "decision": "BLOCK",
+    "reviewer": "Reviewer A",
+    "at": "2026-06-14T10:42:52.587Z"
+  },
+  "signature": {
+    "alg": "ed25519",
+    "publicKey": "MCowBQYDK2VwAyEAtznL3BZ3IFs54ueDwpCCZaZHRJNyMKobItVbnOePDiw=",
+    "signature": "wgCZew8T8JMzbp2wJHumzFfHocqDIriqkNSsUPzGszWmnm5Eb7w5gI+uLgvQBsQz2WvN65cRC+YI1Iz39OP9Cg=="
+  }
+}

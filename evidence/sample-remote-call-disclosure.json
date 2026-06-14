@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "calls": [],
+  "note": "QuorumGate performs no cloud or third-party AI calls; all inference is local via the QVAC SDK."
+}

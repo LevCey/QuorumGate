@@ -1,0 +1,3 @@
+{"type":"model_load","at":"2026-06-14T10:41:46.284Z","data":{"modelId":"82833b9b1875403f","model":"Qwen3-4B-Q4_K_M.gguf","loadMs":1762,"delegated":false}}
+{"type":"completion","at":"2026-06-14T10:42:52.587Z","data":{"modelId":"82833b9b1875403f","promptChars":827,"streamChunks":538,"wallTtftMs":4013.9,"wallTotalMs":63224.5,"sdkStats":{"timeToFirstToken":3993.719,"tokensPerSecond":9.113225560124588,"cacheTokens":0,"promptTokens":439,"generatedTokens":538,"backendDevice":"gpu"}}}
+{"type":"model_unload","at":"2026-06-14T10:42:52.618Z","data":{"modelId":"82833b9b1875403f","model":"Qwen3-4B-Q4_K_M.gguf"}}
