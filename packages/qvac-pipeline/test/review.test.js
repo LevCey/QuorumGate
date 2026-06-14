@@ -8,30 +8,35 @@ const verifiedIban = 'DE89 3704 0044 0532 0130 00';
 /** @type {import('../../core/src/types.js').SupplierHistory} */
 const history = {
   supplierId: 'acme',
+  supplierName: 'Acme GmbH',
   verifiedIbans: [verifiedIban],
   approvedDomains: ['acme.com'],
+  pastInvoiceNumbers: ['INV-2026-031'],
   pastAmounts: [9500, 10000, 10500],
   approvedRefs: ['PO-2026-042'],
+  taxId: 'DE123456789',
+  country: 'DE',
 };
 
 /** @param {string} text @returns {import('../src/model.js').ReasoningModel} */
 const mockModel = (text) => ({ complete: async () => ({ text }) });
 
+// A realistic clean request carries the fields the checks need; a sparse request with
+// most checks unevaluable is held on insufficient evidence, not approved.
 const cleanRequest = {
   supplierId: 'acme',
+  supplierName: 'Acme GmbH',
   destinationIban: verifiedIban,
   senderDomain: 'acme.com',
   amount: 10000,
+  invoiceNumber: 'INV-2026-070',
+  messageText: "Please find this month's invoice attached. Thank you.",
   approvalRef: 'PO-2026-042',
+  taxId: 'DE123456789',
+  country: 'DE',
 };
 
-const trapRequest = {
-  supplierId: 'acme',
-  destinationIban: 'GB29 NWBK 6016 1331 9268 19', // attacker account
-  senderDomain: 'acme.com',
-  amount: 10000,
-  approvalRef: 'PO-2026-042',
-};
+const trapRequest = { ...cleanRequest, destinationIban: 'GB29 NWBK 6016 1331 9268 19', invoiceNumber: 'INV-2026-071' };
 
 test('clean request, model approves → APPROVE', async () => {
   const r = await reviewPayment(cleanRequest, history, mockModel('{"verdict":"APPROVE","memo":"All checks passed."}'));
