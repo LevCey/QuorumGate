@@ -43,7 +43,7 @@ export async function createQvacModel({ modelSrc, modelType = 'llm', modelConfig
     // under memory pressure can shrink below the prompt size and overflow at run time
     // (CONTEXT_OVERFLOW) — non-deterministically, depending on what else is running. The
     // caller's modelConfig (e.g. the four-eyes peer's ctx_size/predict) overrides this.
-    modelConfig: { ctx_size: 4096, ...modelConfig },
+    modelConfig: { ctx_size: 4096, reasoning_budget: 0, ...modelConfig },
     ...(delegate ? { delegate } : {}),
   });
   auditLog?.modelLoad({ modelId: String(modelId), model: basename(String(modelSrc)), loadMs: Date.now() - loadStart, delegated: !!delegate });
