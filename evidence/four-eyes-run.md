@@ -77,7 +77,9 @@ For a credible independent second opinion the demo therefore runs **Qwen3-4B on 
 too**. Re-run Linux consumer ↔ Windows 11 provider (`--sign`): the peer returned a correct
 concurring memo (the high-severity `iban_change` and `sender_domain` justify holding),
 `secondReview.source: "peer"`, `independent: true`, CONCUR — HOLD, signed bundle VALID.
-The latency is higher and dominated by the peer-side model load — about two minutes on the
-demo laptop. The peer model is bounded (explicit `ctx_size` and a generated-token cap; see
+The peer-side model load plus inference takes about 35 seconds on the demo laptops — the
+model's thinking budget is disabled (`reasoning_budget: 0`) so it answers directly instead of
+generating a long hidden reasoning block. The peer model is bounded (explicit `ctx_size` and a
+generated-token cap; see
 `createDelegatedReviewer`) so it always returns instead of overflowing or running away, and
 the four-eyes timeout is 180 s to cover a real model's load and inference on the peer.
