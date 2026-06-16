@@ -75,6 +75,8 @@
   pre { background: #060a0f; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; overflow-x: auto; font-size: 13.5px; color: #cfe6da; }
   pre .c { color: #6f8294; }
   .shot { display: block; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; margin-top: 4px; }
+  .video { position: relative; width: 100%; aspect-ratio: 16 / 9; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-top: 4px; }
+  .video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
   .note { font-size: 14px; color: var(--muted); margin-top: 14px; }
   .note b { color: var(--warn); }
@@ -116,7 +118,6 @@
     local inference. No cloud. No external AI API.
   </p>
   <div class="cta">
-    <!-- TODO: replace href with the unlisted YouTube URL once the demo video is uploaded -->
     <a class="btn primary" href="#demo">Watch the demo</a>
     <a class="btn" href="https://github.com/LevCey/QuorumGate">View on GitHub</a>
     <a class="btn" href="#run">Run it locally</a>
@@ -201,11 +202,11 @@ node packages/ui/src/desk-cli.js examples/sample-data/request-bec-trap.json</pre
 <section id="demo">
   <div class="wrap">
     <h2>Demo</h2>
-    <p class="sub">The offline desk catching the synthetic BEC trap — a capture of the real CLI, reproducible on one machine.</p>
-    <img class="shot" src="demo.gif" width="997" height="806" loading="lazy"
-         alt="QuorumGate CLI reviewing the BEC-trap invoice offline: the deterministic checks fire — changed IBAN, look-alike sender domain, abnormal amount, urgency language — the system recommendation is HOLD, and the human reviewer records a BLOCK decision." />
-    <!-- TODO: add the full 3-minute walkthrough (the four-eyes split-screen across two devices) as an unlisted YouTube embed once recorded. -->
-    <p class="note">The full 3-minute walkthrough — including the four-eyes second review split-screen across two devices — is coming. Meanwhile, <a href="#run">run it yourself</a> or read the <a href="https://github.com/LevCey/QuorumGate">source</a>.</p>
+    <p class="sub">A ~3-minute walkthrough: the trap, the offline catch, the local model's judgment, the four-eyes second review across two devices, and the tamper-evident evidence.</p>
+    <div class="video">
+      <iframe src="https://www.youtube.com/embed/tEbXUtIC73k" title="QuorumGate — Confidential Multi-Reviewer Risk Desk (demo)" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>
+    </div>
+    <p class="note">Runs locally on the finance team's own devices — no cloud, no external AI API. <a href="#run">Run it yourself</a> or read the <a href="https://github.com/LevCey/QuorumGate">source</a>.</p>
   </div>
 </section>
 

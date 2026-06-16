@@ -7,7 +7,7 @@
 ![Built with](https://img.shields.io/badge/built%20with-QVAC%20SDK-black.svg)
 ![Track](https://img.shields.io/badge/track-General%20Purpose%20Devices-informational.svg)
 
-**Website:** [quorumgate.com](https://quorumgate.com)
+**Website:** [quorumgate.com](https://quorumgate.com) · **Demo:** [3-minute video walkthrough](https://youtu.be/tEbXUtIC73k)
 
 > **Status — built for [QVAC Hackathon I — Unleash Edge AI](https://dorahacks.io/hackathon/qvac-unleach-edge-ai-i/detail) (build period June 1–21, 2026).** The local review desk works today: deterministic risk checks, an explainable memo from a real local model via the QVAC SDK, and a four-eyes second review delegated peer-to-peer to a second device. Optional embedding-based RAG grounds the memo in the company's own records (`--embed-model`), and the desk can read fields straight from a scanned invoice image via OCR (`--invoice-image`) — both validated on hardware. All inference runs locally through the QVAC SDK; there is no cloud dependency.
 
@@ -257,7 +257,6 @@ Built during the QVAC Hackathon I window (June 1–21, 2026).
 
 - A best-effort OCR extractor (`--invoice-image`) and embedding RAG (`--embed-model`) are implemented; production-grade document parsing and richer retrieval remain future work. The deterministic intake and supplier lookup stay authoritative.
 - A graphical desk UI (today: the CLI).
-- The recorded demo video and the full cross-device evidence capture.
 
 ## Limitations
 
@@ -277,7 +276,7 @@ QuorumGate is a decision-support demonstration, not a certified financial contro
 - **Four-eyes run:** [`evidence/four-eyes-run.md`](evidence/four-eyes-run.md) records a real delegated two-device second review and its timings.
 - **Audit log:** each `--model` run writes `evidence/audit-log.jsonl` — model loads and per-call inference performance (prompt size, tokens, TTFT, tokens/sec).
 - **Remote-call disclosure:** `evidence/remote-call-disclosure.json` is empty by design — QuorumGate makes no cloud or third-party AI calls.
-- **Demo video:** recorded walkthrough to come (see [`examples/demo-script.md`](examples/demo-script.md)).
+- **Demo video:** a ~3-minute walkthrough — [watch on YouTube](https://youtu.be/tEbXUtIC73k) (scripted in [`examples/demo-script.md`](examples/demo-script.md)).
 
 ## Scope
 
